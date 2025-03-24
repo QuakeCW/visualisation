@@ -78,6 +78,9 @@ def plot_stoch(
         dy = plane_data.header.dy
         length = dx * slip.shape[1]
         width = dy * slip.shape[0]
+        description = utils.format_description(slip, compact=True, units="cm")
+        ax.set_title(f"Segment {i + 1}\n{description}")
+
         # Plot slip array as a heatmap labelled with length along the x-axis and width along the x-axis.
         ax.set_ylim(width, 0)
         ax.imshow(
@@ -88,19 +91,17 @@ def plot_stoch(
         ax.set_xlabel("Length (km)")
         ax.set_ylabel("Width (km)")
 
-        for i, j in np.ndindex(slip.shape):
+        for j, k in np.ndindex(slip.shape):
             # Add text labels to the heatmap, use white text for high values, and black text for low values.
-            colour = "white" if slip[i, j] < np.percentile(slip, 25) else "black"
+            colour = "white" if slip[j, k] < np.percentile(slip, 25) else "black"
             ax.text(
-                j * dx + dx / 2,
-                (i * dy + dy / 2),
-                f"{int(slip[i,  j])}",
+                k * dx + dx / 2,
+                (j * dy + dy / 2),
+                f"{int(slip[j,  k])}",
                 ha="center",
                 va="center",
                 color=colour,
             )
-        description = utils.format_description(slip, compact=True, units="cm")
-        ax.set_title(f"Segment {i + 1}\n{description}")
 
     # empty the unused axes
     for ax in axes.ravel()[len(stoch_data.data) :]:
