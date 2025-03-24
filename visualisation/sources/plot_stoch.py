@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+"""Plot multi-segment rupture stoch file with slip."""
+
+from pathlib import Path
+from typing import Annotated, Optional
+
+import numpy as np
+import typer
+from matplotlib import pyplot as plt
+
+from qcore import cli
+from source_modelling import stoch
+from visualisation import utils
+
+app = typer.Typer()
+
+
+@cli.from_docstring(app)
+def plot_stoch(
+    stoch_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_ffp: Annotated[Path, typer.Argument(dir_okay=False)],
+    width: Annotated[float, typer.Option()] = 10,
+    height: Annotated[float, typer.Option()] = 10,
+    dpi: Annotated[float, typer.Option()] = 300,
+    title: Annotated[Optional[str], typer.Option()] = None,
+) -> None:
+    """Plot multi-segment rupture with slip.
+
+    Parameters
+    ----------
+    stoch_ffp : Path
+        Path to stoch file to plot.
+    output_ffp : Path
+        Output plot image.
+    width : float
+        Width of plot (in cm).
+    height : float
+        Width of plot (in cm).
+    dpi : float
+        Plot output DPI (higher is better).
+    title : Optional[str]
+        Plot title to use.
+
+
+    Examples
+    --------
+    >>> plot_stoch(
+    ...     stoch_ffp="tests/stochs/rupture_1.stoch",
+    ...     output_ffp="slip_plot.png",
+    ...     dpi=300,
+    ...     title="Rupture Slip Distribution",
+    ...     latitude_pad=0.5,
+    ...     longitude_pad=0.5,
+    ...     annotations=True,
+    ...     width=15,
+    ...     show_inset=True,
+    ... )
+    >>> # The above code would plot the slip distribution of the stoch file 'rupture_1.stoch'
+    >>> # and save it as 'slip_plot.png'.
+    >>> # The plot will have a DPI of 300.
+    >>> # The plot will have the title "Rupture Slip Distribution".
+    >>> # The plot will have jump points marked from the realisation file 'realisation.json'.
+    >>> # The plot will have a latitude and longitude padding of 0.5 degrees.
+    >>> # The plot will have annotations of slip times and an inset map.
+    """
+    stoch_data = stoch.StochFile(stoch_ffp)
+    plane_corners = np.concatenate(
+        [plane.corners for plane in stoch_data.planes], axis=0
+    )
+    cm = 1 / 2.54
+    rows = int(np.sqrt(len(stoch_data.data)))
+    cols = int(np.ceil(len(stoch_data.data) / rows))
+    fig, axes = plt.subplots(rows, cols, figsize=(width * cm, height * cm))
+    for i, (ax, plane_data, slip) in enumerate(
+        zip(axes.ravel(), stoch_data.data, stoch_data.slip)
+    ):
+        dx = plane_data.header.dx
+        dy = plane_data.header.dy
+        length = dx * slip.shape[1]
+        width = dy * slip.shape[0]
+        # Plot slip array as a heatmap labelled with length along the x-axis and width along the x-axis.
+        ax.set_ylim(width, 0)
+        ax.imshow(
+            slip[::-1],
+            cmap="hot",
+            extent=[0, length, 0, width],
+        )
+        ax.set_xlabel("Length (km)")
+        ax.set_ylabel("Width (km)")
+
+        for i, j in np.ndindex(slip.shape):
+            # Add text labels to the heatmap, use white text for high values, and black text for low values.
+            colour = "white" if slip[i, j] < np.percentile(slip, 25) else "black"
+            ax.text(
+                j * dx + dx / 2,
+                (i * dy + dy / 2),
+                f"{int(slip[i,  j])}",
+                ha="center",
+                va="center",
+                color=colour,
+            )
+        description = utils.format_description(slip, compact=True, units="cm")
+        ax.set_title(f"Segment {i + 1}\n{description}")
+
+    # empty the unused axes
+    for ax in axes.ravel()[len(stoch_data.data) :]:
+        ax.axis("off")
+
+    fig.suptitle(title)
+    fig.tight_layout()
+    fig.savefig(output_ffp, dpi=dpi)
+
+
+if __name__ == "__main__":
+    app()
