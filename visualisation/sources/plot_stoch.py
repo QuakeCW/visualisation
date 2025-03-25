@@ -85,7 +85,7 @@ def plot_stoch(
         ax.set_ylim(width, 0)
         ax.imshow(
             slip[::-1],
-            cmap="hot",
+            cmap="hot_r",
             extent=[0, length, 0, width],
         )
         ax.set_xlabel("Length (km)")
@@ -93,7 +93,7 @@ def plot_stoch(
 
         for j, k in np.ndindex(slip.shape):
             # Add text labels to the heatmap, use white text for high values, and black text for low values.
-            colour = "white" if slip[j, k] < np.percentile(slip, 25) else "black"
+            colour = "black" if slip[j, k] < np.percentile(slip, 25) else "white"
             ax.text(
                 k * dx + dx / 2,
                 (j * dy + dy / 2),
