@@ -115,3 +115,6 @@ def test_plot_stoch(tmp_path: Path):
         dpi=300,
         title="Stoch file",
     )
+
+    diff = diffimg.diff(original, output_image_path)
+    assert diff <= 0.05
