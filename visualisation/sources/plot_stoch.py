@@ -64,9 +64,6 @@ def plot_stoch(
     >>> # The plot will have annotations of slip times and an inset map.
     """
     stoch_data = stoch.StochFile(stoch_ffp)
-    plane_corners = np.concatenate(
-        [plane.corners for plane in stoch_data.planes], axis=0
-    )
     cm = 1 / 2.54
     rows = int(np.sqrt(len(stoch_data.data)))
     cols = int(np.ceil(len(stoch_data.data) / rows))
