@@ -107,7 +107,7 @@ def test_plot_stoch(tmp_path: Path):
     output_image_path = tmp_path / "output.png"
     original = PLOT_IMAGE_DIRECTORY / "stoch_example.png"
 
-    plot_stoch.plot_stoch(
+    plot_stoch.plot_stoch_to_file(
         STOCH_FFP / "realisation.stoch",
         output_image_path,
         width=60,
