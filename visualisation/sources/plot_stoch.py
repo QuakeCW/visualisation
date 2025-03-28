@@ -144,7 +144,7 @@ def plot_stoch_to_file(
     >>> # The plot will have annotations of slip times and an inset map.
     """
     stoch_data = stoch.StochFile(stoch_ffp)
-    fig, axes = plot_stoch(stoch_data, width, height, dpi, title)
+    fig, axes = plot_stoch(stoch_data, width, height)
     if title:
         fig.suptitle(title)
     fig.tight_layout()
