@@ -37,6 +37,7 @@ def plot_stoch(
         Width of plot (in cm). Default is 10.
     height : float, optional
         Height of plot (in cm). Default is 10.
+
     Returns
     -------
     plt.Figure
