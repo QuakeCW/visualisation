@@ -66,7 +66,7 @@ def plot_stoch(
         description = utils.format_description(slip, compact=True, units="cm")
         ax.set_title(f"Segment {i + 1}\n{description}")
 
-        # Plot slip array as a heatmap labelled with length along the x-axis and width along the x-axis.
+        # Plot slip array as a heatmap labelled with length along the x-axis and width along the y-axis.
         ax.set_ylim(width, 0)
         ax.imshow(
             slip[::-1],
