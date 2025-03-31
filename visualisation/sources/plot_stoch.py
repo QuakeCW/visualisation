@@ -78,7 +78,7 @@ def plot_stoch(
 
         for j, k in np.ndindex(slip.shape):
             # Add text labels to the heatmap, use white text for high values, and black text for low values.
-            colour = "black" if slip[j, k] < np.percentile(slip, 25) else "white"
+            colour = "black" if slip[j, k] < np.median(slip) else "white"
             ax.text(
                 k * dx + dx / 2,
                 (j * dy + dy / 2),
