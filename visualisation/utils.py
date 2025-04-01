@@ -3,6 +3,8 @@
 from typing import Optional
 
 import numpy as np
+import pygmt
+import scipy as sp
 import shapely
 
 from qcore import coordinates
