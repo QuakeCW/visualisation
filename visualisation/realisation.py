@@ -1,4 +1,10 @@
-"""Plot domains from realisation files."""
+"""
+Module for plotting the spatial domain and related features of realisations.
+
+This module provides functions to visualise the domain of a
+realisation, including source geometries, stations, and PGV targets.
+The functions are designed to be reusable for custom plotting scripts.
+"""
 
 from pathlib import Path
 from typing import Annotated
@@ -25,24 +31,37 @@ from workflow.scripts import generate_velocity_model_parameters
 app = typer.Typer()
 
 
-def plot_stations(fig: pygmt.Figure, domain: BoundingBox, stations_path: Path) -> None:
+def plot_stations(
+    fig: pygmt.Figure, domain_parameters: DomainParameters, stations_path: Path
+) -> None:
     """Plot stations file on a figure.
 
     Parameters
     ----------
     fig : pygmt.Figure
         The figure to plot on.
-    domain : BoundingBox
+    domain : DomainParameters
         The simulation domain (used to count the number of stations in
         the domain).
     stations_path : Path
         Path to the stations file.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> import pandas as pd
+    >>> from workflow.realisations import DomainParameters
+    >>> stations_data = pd.DataFrame({'lon': [171, 171.5, 172], 'lat': [-41, -41.5, -42], 'name': ['A', 'B', 'C']})
+    >>> domain = DomainParameters.read_from_realisation('realisation.json')
+    >>> fig = pygmt.Figure()
+    >>> plot_stations(fig, domain, stations_path)
+    >>> fig.show()
     """
     stations = pd.read_csv(
         stations_path, delimiter=r"\s+", comment="#", names=["lon", "lat", "name"]
     )
     stations_in_domain = np.count_nonzero(
-        domain.contains(stations[["lat", "lon"]].to_numpy())
+        domain_parameters.domain.contains(stations[["lat", "lon"]].to_numpy())
     )
     fig.plot(
         x=stations["lon"],
@@ -60,9 +79,18 @@ def plot_sources(fig: pygmt.Figure, source_config: SourceConfig) -> None:
     Parameters
     ----------
     fig : pygmt.Figure
-            The figure to plot on.
+        The figure to plot on.
     source_config : SourceConfig
-            The source configuration to plot.
+        The source configuration to plot.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> from workflow.realisations import SourceConfig
+    >>> source_config = SourceConfig.read_from_realisation("realisation.json")
+    >>> fig = pygmt.Figure()
+    >>> plot_sources(fig, source_config)
+    >>> source_config.show()
     """
     for source in source_config.source_geometries.values():
         utils.plot_polygon(
@@ -72,25 +100,36 @@ def plot_sources(fig: pygmt.Figure, source_config: SourceConfig) -> None:
 
 def plot_domain(
     fig: pygmt.Figure,
-    domain: DomainParameters,
+    domain_parameters: DomainParameters,
 ) -> None:
     """Plot the domain on a figure.
 
     Parameters
     ----------
     fig : pygmt.Figure
-            The figure to plot on.
-    domain : DomainParameters
-            The domain to plot.
+        The figure to plot on.
+    domain_parameters : DomainParameters
+        The domain to plot.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> from workflow.realisations import DomainParameters
+    >>> domain = DomainParameters.read_from_realisation("realisation.json")
+    >>> fig = pygmt.Figure()
+    >>> plot_domain(fig, domain)
+    >>> fig.show()
     """
     utils.plot_polygon(
-        fig, utils.polygon_nztm_to_pygmt(domain.polygon), pen="1p,blue,-"
+        fig,
+        utils.polygon_nztm_to_pygmt(domain_parameters.domain.polygon),
+        pen="1p,blue,-",
     )
 
 
 def plot_rrup_polygon(
     fig: pygmt.Figure,
-    region: BoundingBox,
+    region: utils.Region,
     pgv_target: float,
     rrup_bounding_polygon: shapely.Polygon,
 ) -> None:
@@ -106,6 +145,19 @@ def plot_rrup_polygon(
         The PGV target for the polygon (used as a label).
     rrup_bounding_polygon : shapely.Polygon
         The RRup bounding polygon.
+
+    Examples
+    --------
+    >>> import pygmt
+    >>> from velocity_modelling.bounding_box import BoundingBox
+    >>> from shapely.geometry import Polygon
+    >>> from visualisation import utils
+    >>> # Create dummy data
+    >>> region = (170, 172, -42, -40)
+    >>> rrup_polygon = Polygon([(171, -41), (171.5, -41), (171.5, -41.5), (171, -41.5)])
+    >>> fig = pygmt.Figure()
+    >>> plot_rrup_polygon(fig, region, 10.0, rrup_polygon)
+    >>> fig.show()
     """
     utils.plot_polygon(
         fig,
@@ -135,7 +187,7 @@ def plot_realisation(
     pgv_targets: list[float] | None = None,
     stations: Path | None = None,
 ) -> pygmt.Figure:
-    """Plot the domain of a realisation to a file.
+    """Plot the domain and sources of a realisation.
 
     Parameters
     ----------
@@ -151,8 +203,6 @@ def plot_realisation(
         Subtitle of the plot.
     width : float
         Width of the plot in cm.
-    dpi : float
-        DPI of the plot (higher is better quality).
     show_geonet_stations : bool
         Show GeoNet stations on the plot.
     show_geometry : bool
@@ -169,12 +219,24 @@ def plot_realisation(
     -------
     pygmt.Figure
         The figure.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> fig = plot_realisation(
+    ...     realisation_ffp=realisation_ffp,
+    ...     width=5,
+    ...     show_geometry=False,
+    ...     show_pgv_targets=False,
+    ...     stations=None,
+    ... )
+    >>> fig.show()
     """
     show_pgv_targets = show_pgv_targets or bool(pgv_targets)
     rupture_propagation = RupturePropagationConfig.read_from_realisation(
         realisation_ffp
     )
-    domain = DomainParameters.read_from_realisation(realisation_ffp).domain
+    domain_parameters = DomainParameters.read_from_realisation(realisation_ffp)
 
     velocity_model_parameters = VelocityModelParameters.read_from_realisation(
         realisation_ffp
@@ -208,7 +270,7 @@ def plot_realisation(
             )
 
     region = utils.bounding_region_for(
-        [domain.polygon] + rrup_bounding_polygons,
+        [domain_parameters.domain.polygon] + rrup_bounding_polygons,
         latitude_pad=latitude_pad,
         longitude_pad=longitude_pad,
     )
@@ -220,13 +282,13 @@ def plot_realisation(
         subtitle=subtitle,
     )
 
-    plot_domain(fig, domain)
+    plot_domain(fig, domain_parameters)
 
     if show_geometry:
         plot_sources(fig, source_config)
 
     if stations:
-        plot_stations(fig, domain, stations)
+        plot_stations(fig, domain_parameters, stations)
 
     if show_pgv_targets:
         for pgv_target, rrup_bounding_polygon in zip(
@@ -242,7 +304,7 @@ def plot_realisation(
 
 
 @cli.from_docstring(app)
-def plot_domain_to_file(
+def plot_realisation_to_file(
     realisation_ffp: Annotated[
         Path,
         typer.Argument(dir_okay=False, exists=True, readable=True, show_default=False),
@@ -306,7 +368,7 @@ def plot_domain_to_file(
         ),
     ] = None,
 ) -> pygmt.Figure:
-    """Plot the domain of a realisation to a file.
+    """Plot the domain and sources of a realisation to a file.
 
     Parameters
     ----------
@@ -335,8 +397,20 @@ def plot_domain_to_file(
         realisation. A non-empty value implies `show_pgv_targets`.
     stations : Path, optional
         Path to list of stations to plot.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> plot_realisation_to_file(
+    ...     realisation_ffp=realisation_ffp,
+    ...     width=5,
+    ...     show_geometry=False,
+    ...     show_pgv_targets=False,
+    ...     stations=None,
+    ... )
+    >>> fig.show()
     """
-    fig = plot_domain(
+    fig = plot_realisation(
         realisation_ffp,
         latitude_pad=latitude_pad,
         longitude_pad=longitude_pad,
