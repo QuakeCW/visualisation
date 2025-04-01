@@ -3,11 +3,6 @@
 from typing import Optional
 
 import numpy as np
-import pygmt
-import scipy as sp
-import shapely
-
-from qcore import coordinates
 
 
 def format_description(
@@ -46,8 +41,7 @@ def format_description(
     if compact:
         return f"{min_label} / {mean_label} / {std_label} / {max_label}"
     return f"{min_label}\n{mean_label} ({std_label})\n{max_label}"
-
-
+  
 def nztm_to_wgs_wraparound(coords: np.ndarray) -> np.ndarray:
     """Convert NZTM coordinates to WGS84, wrapping around the international date line for PyGMT.
 
