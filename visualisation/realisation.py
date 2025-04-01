@@ -14,11 +14,9 @@ import pandas as pd
 import pygmt
 import shapely
 import typer
-from velocity_modelling.bounding_box import BoundingBox
 
 from pygmt_helper import plotting
-from qcore import cli, coordinates
-from qcore.uncertainties import mag_scaling
+from qcore import cli
 from visualisation import utils
 from workflow.realisations import (
     DomainParameters,

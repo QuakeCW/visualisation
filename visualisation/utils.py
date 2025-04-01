@@ -108,7 +108,7 @@ def polygon_nztm_to_pygmt(polygon: shapely.Polygon) -> shapely.Polygon:
     )
 
 
-def _point_on_polygon(t, polygon):
+def _point_on_polygon(t: float, polygon: shapely.Polygon) -> shapely.Point:
     """Maps t between 0 and 1 (inclusive) to a point on the polygon boundary.
 
     Parameters
@@ -169,7 +169,7 @@ def _hausdorff_maximisation(
     `shapely.hausdorff_distance` : Computes the Hausdorff distance between two geometries.
     """
 
-    def objective(t):  # numpydoc: ignore=GL08
+    def objective(t: float) -> float:  # numpydoc: ignore=GL08
         point = _point_on_polygon(t, polygon)
         return -point.distance(other_geom.exterior)  # Negative because we maximize
 
