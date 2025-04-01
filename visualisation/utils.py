@@ -169,7 +169,7 @@ def _hausdorff_maximisation(
     shapely.hausdorff_distance : Computes the Hausdorff distance between two geometries.
     """
 
-    def objective(t: float) -> float:  # numpydoc: ignore=GL08
+    def objective(t: float) -> float:  # numpydoc ignore=GL08
         point = _point_on_polygon(t, polygon)
         return -point.distance(other_geom.exterior)  # Negative because we maximize
 

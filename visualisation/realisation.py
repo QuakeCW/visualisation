@@ -191,8 +191,6 @@ def plot_realisation(
     ----------
     realisation_ffp : Path
         Path to the realisation file to plot.
-    output_ffp : Path
-        Path to the output file.
     latitude_pad : float
         Latitude padding in degrees.
     longitude_pad : float
@@ -374,6 +372,8 @@ def plot_realisation_to_file(
     ----------
     realisation_ffp : Path
         Path to the realisation file to plot.
+    output_ffp : Path
+        Path to the output file.
     latitude_pad : float
         Latitude padding in degrees.
     longitude_pad : float
