@@ -11,7 +11,7 @@ from velocity_modelling.bounding_box import BoundingBox
 from pygmt_helper import plotting
 from qcore import cli, coordinates
 from qcore.uncertainties import mag_scaling
-from visualisation.realisations import plot_domain
+from visualisation import utils
 from workflow.realisations import (
     DomainParameters,
     RupturePropagationConfig,
@@ -21,24 +21,6 @@ from workflow.realisations import (
 from workflow.scripts import generate_velocity_model_parameters
 
 app = typer.Typer()
-
-Region = tuple[float, float, float, float]
-
-
-def plot_domain(
-    realisation_ffp: Path,
-    region: Region,
-    width: float,
-    latitude_pad: float,
-    longitude_pad: float,
-    title: str | None = None,
-    subtitle: str | None = None,
-) -> tuple[pygmt.Figure, Region]:
-    domain_parameters = DomainParameters.read_from_realisation(realisation_ffp)
-    domain = polygon_nztm_to_pygmt(domain_parameters.domain.polygon)
-
-    plot_polygon(fig, domain, pen="1p,blue,-")
-    return fig, region
 
 
 def plot_stations(fig: pygmt.Figure, domain: BoundingBox, stations_path: Path) -> None:
@@ -62,11 +44,11 @@ def bounding_region_for(
     polygon: shapely.Polygon | list[shapely.Polygon],
     latitude_pad: float,
     longitude_pad: float,
-) -> Region:
+) -> utils.Region:
     if isinstance(polygon, list):
         polygon = shapely.union_all(polygon)
 
-    bounds = shapely.bounds(polygon_nztm_to_pygmt(polygon))
+    bounds = shapely.bounds(utils.polygon_nztm_to_pygmt(polygon))
     return (
         bounds[0] - longitude_pad,
         bounds[2] + longitude_pad,
@@ -161,19 +143,31 @@ def plot_domain_to_file(
     Parameters
     ----------
     realisation_ffp : Path
-            Path to the realisation file to plot.
+        Path to the realisation file to plot.
     output_ffp : Path
-            Path to output image file path.
+        Path to output image file path.
     latitude_pad : float
-            Latitude padding in degrees.
+        Latitude padding in degrees.
     longitude_pad : float
-            Longitude padding in degrees.
+        Longitude padding in degrees.
     title : str, optional
-            Title of the plot.
+        Title of the plot.
     subtitle : str, optional
-            Subtitle of the plot.
+        Subtitle of the plot.
     width : float
-            Width of the plot in cm.
+        Width of the plot in cm.
+    dpi : float
+        DPI of the plot (higher is better quality).
+    show_geonet_stations : bool
+        Show GeoNet stations on the plot.
+    show_geometry : bool
+        Show source geometry on the plot.
+    show_pgv_targets : bool
+        Show PGV targets on the plot.
+    pgv_targets : list[float], optional
+        PGV targets to plot. If None, use PGV targets from the realisation.
+    stations : Path, optional
+        Path to list of stations to plot.
     """
 
     rupture_propagation = RupturePropagationConfig.read_from_realisation(
@@ -228,17 +222,38 @@ def plot_domain_to_file(
         subtitle=subtitle,
     )
 
-    plot_polygon(fig, polygon_nztm_to_pygmt(domain.polygon), pen="1p,blue,-")
+    utils.plot_polygon(
+        fig, utils.polygon_nztm_to_pygmt(domain.polygon), pen="1p,blue,-"
+    )
 
     if show_geometry:
-        plot_polygon(fig, polygon_nztm_to_pygmt(source_geometry), pen="0.3p,black")
-
-    if show_pgv_targets:
-        for rrup_polygon in rrup_bounding_polygons:
-            plot_polygon(fig, polygon_nztm_to_pygmt(rrup_polygon), pen="0.3p,black,-")
+        utils.plot_polygon(
+            fig, utils.polygon_nztm_to_pygmt(source_geometry), pen="0.3p,black"
+        )
 
     if stations:
         plot_stations(fig, domain, stations)
+
+    if show_pgv_targets:
+        for pgv_target, rrup_bounding_polygon in zip(
+            fault_pgv_targets, rrup_bounding_polygons
+        ):
+            utils.plot_polygon(
+                fig,
+                utils.polygon_nztm_to_pygmt(rrup_bounding_polygon),
+                pen="0.3p,black,-",
+            )
+            utils.label_polygon(
+                fig,
+                region,
+                utils.polygon_nztm_to_pygmt(rrup_bounding_polygon),
+                f"{pgv_target} cm/s",
+                fill="white",
+                pen="0.3p,black",
+            )
+
+    # Plot the legend overtop the other elements.
+    if stations:
         fig.legend(position="jTR+o0.2c", box="+gwhite+p1p")
 
     fig.savefig(output_ffp, dpi=dpi)

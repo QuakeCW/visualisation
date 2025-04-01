@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy as np
 import pygmt
+import scipy as sp
 import shapely
 
 from qcore import coordinates
@@ -105,6 +106,109 @@ def polygon_nztm_to_pygmt(polygon: shapely.Polygon) -> shapely.Polygon:
         polygon,
         lambda x: nztm_to_wgs_wraparound(x),
     )
+
+
+def _point_on_polygon(t, polygon):
+    """Maps t between 0 and 1 (inclusive) to a point on the polygon boundary.
+
+    Parameters
+    ----------
+    t : float
+        Value between 0 and 1 (inclusive).
+    polygon : shapely.Polygon
+        Polygon to find point on.
+
+    Returns
+    -------
+    shapely.Point
+        Point on the polygon boundary.
+    """
+    boundary = polygon.exterior
+    length = boundary.length
+    target_length = t * length
+    accumulated_length = 0
+
+    for i in range(len(boundary.coords) - 1):
+        p1 = shapely.Point(boundary.coords[i])
+        p2 = shapely.Point(boundary.coords[i + 1])
+        segment_length = p1.distance(p2)
+
+        if accumulated_length + segment_length >= target_length:
+            # Interpolate along this segment
+            ratio = (target_length - accumulated_length) / segment_length
+            x = p1.x + ratio * (p2.x - p1.x)
+            y = p1.y + ratio * (p2.y - p1.y)
+            return shapely.Point(x, y)
+
+        accumulated_length += segment_length
+
+    return shapely.Point(
+        boundary.coords[-1]
+    )  # Should not happen but acts as a failsafe
+
+
+def _hausdorff_maximization(
+    polygon: shapely.Polygon, other_geom: shapely.Polygon
+) -> shapely.Point:
+    """Finds the point on polygon maximizing the distance to other_geom.
+
+    Parameters
+    ----------
+    polygon : shapely.Polygon
+        Polygon to find point on.
+    other_geom : shapely.Polygon
+        Other geometry to maximize distance to.
+
+    Returns
+    -------
+    shapely.Point
+        Point on the polygon boundary maximizing the distance to other_geom.
+
+    See Also
+    --------
+    `shapely.hausdorff_distance` : Computes the Hausdorff distance between two geometries.
+    """
+
+    def objective(t):  # numpydoc: ignore=GL08
+        point = _point_on_polygon(t, polygon)
+        return -point.distance(other_geom.exterior)  # Negative because we maximize
+
+    result = sp.optimize.minimize_scalar(objective, bounds=(0, 1), method="bounded")
+    if result.success:
+        return _point_on_polygon(result.x, polygon), -result.fun
+    else:
+        raise RuntimeError("Optimization failed")
+
+
+Region = tuple[float, float, float, float]
+
+
+def label_polygon(
+    fig: pygmt.Figure, region: Region, polygon: shapely.Polygon, label: str, **kwargs
+) -> None:
+    """Label a polygon on a pygmt figure.
+
+    Will label the boundary of the polygon with the given label. The
+    point chosen on the boundary is the point farthest from the region
+    boundaries.
+
+    Parameters
+    ----------
+    fig : pygmt.Figure
+        Figure to plot on.
+    region : Region
+        Region to plot.
+    polygon : shapely.Polygon
+        Polygon to label.
+    label : str
+        Label to add.
+    **kwargs
+        Additional arguments to pass to `pygmt.Figure.text`.
+    """
+    region_polygon = shapely.box(region[0], region[2], region[1], region[3])
+    point, _ = _hausdorff_maximisation(polygon, region_polygon)
+
+    fig.text(x=point.x, y=point.y, text=label, **kwargs)
 
 
 def plot_polygon(
