@@ -21,7 +21,7 @@ SRF_FFP = Path(__file__).parent / "srfs" / "rupture_1.srf"
 MULTI_SUMMARY_SRF_FFP = Path(__file__).parent / "srfs" / "nevis.srf"
 REALISATION_FFP = Path(__file__).parent / "srfs" / "realisation.json"
 DOMAIN_REALISATION_FFP = Path(__file__).parent / "realisation" / "realisation.json"
-STATIONS_FFP = Path(__file__).parent / "realisation" / "stations.json"
+STATIONS_FFP = Path(__file__).parent / "realisation" / "stations.ll"
 
 
 @pytest.mark.parametrize(
