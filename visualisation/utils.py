@@ -256,3 +256,39 @@ def plot_polygon(
             y=polygon_coords[:, 1],
             **kwargs,
         )
+
+
+def bounding_region_for(
+    polygon: shapely.Polygon | list[shapely.Polygon],
+    latitude_pad: float,
+    longitude_pad: float,
+) -> Region:
+    """Get the bounding region for a polygon or list of polygons.
+
+    Parameters
+    ----------
+    polygon : shapely.Polygon | list[shapely.Polygon]
+        The polygon(s) to bound.
+    latitude_pad : float
+        A latitude padding around the region.
+    longitude_pad : float
+        A longitude padding around the region.
+
+
+    Returns
+    -------
+    utils.Region
+        The pygmt region bounding the polygons + padding.
+    """
+    if isinstance(polygon, list):
+        polygon = shapely.union_all(polygon)
+
+    min_longitude, min_latitude, max_longitude, max_latitude = shapely.bounds(
+        polygon_nztm_to_pygmt(polygon)
+    )
+    return (
+        min_longitude - longitude_pad,
+        max_longitude + longitude_pad,
+        min_latitude - latitude_pad,
+        max_latitude + latitude_pad,
+    )
