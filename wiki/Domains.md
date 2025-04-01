@@ -89,7 +89,7 @@ Example:
 ```bash
 $ plot-domain alpine_base_1.json alpine_base_1_with_options.png --latitude-pad 0.5 --longitude-pad 0.5 --title "Padded Domain" --width 15
 ```
-
+![Basic domain plot with fixed width and padding](images/alpine_base_1_padded.png)
 ### Toggling Content
 
 - **Source Geometry:** The source geometry is plotted by default. To

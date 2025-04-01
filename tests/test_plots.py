@@ -4,6 +4,7 @@ from pathlib import Path
 import diffimg
 import pytest
 
+from visualisation import realisation
 from visualisation.sources import (
     plot_mw_contributions,
     plot_rakes,
@@ -19,6 +20,8 @@ PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 SRF_FFP = Path(__file__).parent / "srfs" / "rupture_1.srf"
 MULTI_SUMMARY_SRF_FFP = Path(__file__).parent / "srfs" / "nevis.srf"
 REALISATION_FFP = Path(__file__).parent / "srfs" / "realisation.json"
+DOMAIN_REALISATION_FFP = Path(__file__).parent / "realisation" / "realisation.json"
+STATIONS_FFP = Path(__file__).parent / "realisation" / "stations.json"
 
 
 @pytest.mark.parametrize(
@@ -56,7 +59,6 @@ def test_plot_functions(
 
 
 def test_plot_mw_contributions(tmp_path: Path):
-
     original = PLOT_IMAGE_DIRECTORY / "example_mw_contributions.png"
     generated = tmp_path / "output.png"
 
@@ -99,4 +101,77 @@ def test_plot_slip_rise_rake_segment(tmp_path: Path):
     )
 
     diff = diffimg.diff(original, output_image_path)
+    assert diff <= 0.05
+
+
+def test_realisation_plotting(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    realisation.plot_realisation_to_file(
+        DOMAIN_REALISATION_FFP,
+        output_image_path,
+    )
+
+    original = PLOT_IMAGE_DIRECTORY / "alpine_base_1.png"
+    generated = output_image_path
+
+    diff = diffimg.diff(original, generated)
+    assert diff <= 0.05
+
+
+def test_realisation_padded(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    realisation.plot_realisation_to_file(
+        DOMAIN_REALISATION_FFP,
+        output_image_path,
+        latitude_pad=0.5,
+        longitude_pad=0.5,
+        title="Padded Domain",
+        width=15,
+    )
+
+    original = PLOT_IMAGE_DIRECTORY / "alpine_base_1_padded.png"
+    generated = output_image_path
+
+    diff = diffimg.diff(original, generated)
+    assert diff <= 0.05
+
+
+def test_realisation_no_source_geometry(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    realisation.plot_realisation_to_file(
+        DOMAIN_REALISATION_FFP,
+        output_image_path,
+        show_geometry=False,
+    )
+
+    original = PLOT_IMAGE_DIRECTORY / "alpine_base_1_no_geometry.png"
+    generated = output_image_path
+
+    diff = diffimg.diff(original, generated)
+    assert diff <= 0.05
+
+
+def test_realisation_pgv_targets(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    realisation.plot_realisation_to_file(
+        DOMAIN_REALISATION_FFP, output_image_path, pgv_targets=[5.0, 1.0]
+    )
+
+    original = PLOT_IMAGE_DIRECTORY / "alpine_base_1_pgv_targets.png"
+    generated = output_image_path
+
+    diff = diffimg.diff(original, generated)
+    assert diff <= 0.05
+
+
+def test_realisation_stations(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    realisation.plot_realisation_to_file(
+        DOMAIN_REALISATION_FFP, output_image_path, stations=STATIONS_FFP
+    )
+
+    original = PLOT_IMAGE_DIRECTORY / "alpine_base_1_stations.png"
+    generated = output_image_path
+
+    diff = diffimg.diff(original, generated)
     assert diff <= 0.05
