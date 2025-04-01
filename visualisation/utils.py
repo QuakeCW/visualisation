@@ -147,7 +147,7 @@ def _point_on_polygon(t, polygon):
     )  # Should not happen but acts as a failsafe
 
 
-def _hausdorff_maximization(
+def _hausdorff_maximisation(
     polygon: shapely.Polygon, other_geom: shapely.Polygon
 ) -> shapely.Point:
     """Finds the point on polygon maximizing the distance to other_geom.
@@ -177,7 +177,7 @@ def _hausdorff_maximization(
     if result.success:
         return _point_on_polygon(result.x, polygon), -result.fun
     else:
-        raise RuntimeError("Optimization failed")
+        raise RuntimeError("Optimisation failed")
 
 
 Region = tuple[float, float, float, float]
