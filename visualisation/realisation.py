@@ -38,7 +38,7 @@ def plot_stations(
     ----------
     fig : pygmt.Figure
         The figure to plot on.
-    domain : DomainParameters
+    domain_parameters : DomainParameters
         The simulation domain (used to count the number of stations in
         the domain).
     stations_path : Path
@@ -191,6 +191,8 @@ def plot_realisation(
     ----------
     realisation_ffp : Path
         Path to the realisation file to plot.
+    output_ffp : Path
+        Path to the output file.
     latitude_pad : float
         Latitude padding in degrees.
     longitude_pad : float

@@ -166,7 +166,7 @@ def _hausdorff_maximisation(
 
     See Also
     --------
-    `shapely.hausdorff_distance` : Computes the Hausdorff distance between two geometries.
+    shapely.hausdorff_distance : Computes the Hausdorff distance between two geometries.
     """
 
     def objective(t: float) -> float:  # numpydoc: ignore=GL08
