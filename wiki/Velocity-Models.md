@@ -107,4 +107,4 @@ Example combining options:
 $ plot-1d-velocity-model realisation.json custom_plot.png --panel vp --panel vs --title "P and S Wave Velocity" --subplot-width 12 --subplot-height 12 --dpi 400
 ```
 
-![Example plot with customised appearence to make the subplots larger and higher resolution, with a title. ](images/custom_vmod_plot.png)
+![Example plot with customised appearance to make the subplots larger and higher resolution, with a title. ](images/custom_vmod_plot.png)
