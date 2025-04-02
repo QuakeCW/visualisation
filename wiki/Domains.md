@@ -8,7 +8,7 @@ This tool is designed to create map-based plots showing the calculated simulatio
 All of the tools below can be invoked via the command line.
 
 
-The components of the `plot-domain` tool (plotting source geometry, stations, the domain, and PGV target contours, and `plot-domain` itself) can be invoked as in Python as an API for building your own custom scripts. See the [QuakeCoRE documentation](https://quakecoresoft.canterbury.ac.nz/docs/visualisation.realisation.html) for general API documentation.
+The components of the `plot-domain` tool (plotting source geometry, stations, the domain, PGV target contours, and `plot-domain` itself) can be invoked in Python as an API for building your own custom scripts. See the [QuakeCoRE documentation](https://quakecoresoft.canterbury.ac.nz/docs/visualisation.realisation.html) for general API documentation.
 
 ## Installing the Plotting Tools
 
