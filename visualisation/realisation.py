@@ -71,7 +71,9 @@ def plot_stations(
     )
 
 
-def plot_sources(fig: pygmt.Figure, source_config: SourceConfig) -> None:
+def plot_sources(
+    fig: pygmt.Figure, source_config: SourceConfig, **kwargs: dict
+) -> None:
     """Plot the sources on the figure.
 
     Parameters
@@ -92,7 +94,10 @@ def plot_sources(fig: pygmt.Figure, source_config: SourceConfig) -> None:
     """
     for source in source_config.source_geometries.values():
         utils.plot_polygon(
-            fig, utils.polygon_nztm_to_pygmt(source.geometry), pen="0.3p,black"
+            fig,
+            utils.polygon_nztm_to_pygmt(source.geometry),
+            pen="0.3p,black",
+            **kwargs,
         )
 
 
