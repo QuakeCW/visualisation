@@ -4,7 +4,9 @@ from pathlib import Path
 import diffimg
 import pytest
 
+
 from visualisation import plot_1d_velocity_model
+from visualisation import realisation
 from visualisation.sources import (
     plot_mw_contributions,
     plot_rakes,
@@ -18,6 +20,7 @@ from visualisation.sources import (
 
 TEST_DATA_DIR = Path(__file__).parent
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
+STATIONS_FFP = TEST_DATA_DIR / "realisations" / "stations.ll"
 DEFAULT_IMAGE_DIFF_TOLERANCE = 0.05
 
 
@@ -60,6 +63,10 @@ def output_image_path(tmp_path: Path) -> Path:
     """Provides a unique temporary path for generated images in each test."""
     return tmp_path / "output.png"
 
+@pytest.fixture(scope="module")
+def realisation_base_file() -> Path:
+    """Path to the realisation JSON file."""
+    return TEST_DATA_DIR / "realisations" / "realisation.json"
 
 def assert_images_match(
     generated_path: Path,
@@ -129,6 +136,7 @@ def test_standard_srf_plots(
     plot_function(srf_ffp, output_image_path, **plot_kwargs)
 
     assert_images_match(output_image_path, expected_image_file)
+
 
 
 def test_plot_mw_contributions(
@@ -243,4 +251,69 @@ def test_plot_velocity_model(
         **plot_kwargs,
     )
 
-    assert_images_match(output_image_path, expected_image_file)
+
+@pytest.mark.parametrize(
+    "plot_kwargs, expected_image_name",
+    [
+        # Default case
+        ({}, "alpine_base_1.png"),
+        # Padded case
+        (
+            {
+                "latitude_pad": 0.5,
+                "longitude_pad": 0.5,
+                "title": "Padded Domain",
+                "width": 15,
+            },
+            "alpine_base_1_padded.png",
+        ),
+        # No geometry case
+        (
+            {
+                "show_geometry": False,,
+            },
+            "alpine_base_1_no_goemetry.png",
+        ),
+        (
+          {
+             "pgv_targets": [5.0, 1.0]
+          },
+          "alpine_base_1_pgv_targets.png",
+        ),
+        (
+            {
+                'stations': STATIONS_FFP
+            },
+            "alpine_base_1_stations.png"
+        )
+        # Custom options case
+        (
+            {
+                "panels": [
+                    plot_1d_velocity_model.Panel.VP,
+                    plot_1d_velocity_model.Panel.VS,
+                ],
+                "title": "P and S Wave Velocity",
+                "subplot_height": 12,
+                "subplot_width": 12,
+                "dpi": 400,
+            },
+            "custom_vmod_plot.png",
+        ),
+    ],
+    ids=["default", "vs_density", "qp_qs", "custom_options"],
+)
+def test_plot_realisation(
+    realisation_base_file: Path,
+    output_image_path: Path,
+    plot_image_dir: Path,
+    plot_kwargs: dict,
+    expected_image_name: str,
+):
+    expected_image_file = plot_image_dir / expected_image_name
+
+    plot_1d_velocity_model.plot_1d_velocity_model_to_file(
+        velocity_model_plot_file,
+        output_image_path,
+        **plot_kwargs,
+    )

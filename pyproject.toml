@@ -13,6 +13,7 @@ dynamic = ["version", "dependencies"]
 
 [project.scripts]
 plot-srf-moment = "visualisation.sources.plot_srf_moment:app"
+plot-domain = "visualisation.realisation:app"
 plot-srf-cumulative-moment = "visualisation.sources.plot_srf_cumulative_moment:app"
 plot-srf = "visualisation.sources.plot_srf:app"
 plot-srf-rakes = "visualisation.sources.plot_rakes:app"
