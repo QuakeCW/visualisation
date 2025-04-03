@@ -200,6 +200,17 @@ def test_plot_slip_rise_rake(
             },
             "alpine_hope_vmod_vs_density.png",
         ),
+        # Qp and Qs case
+        (
+            {
+                "panels": [
+                    plot_1d_velocity_model.Panel.QP,
+                    plot_1d_velocity_model.Panel.QS,
+                ],
+                "title": "Qp and Qs",
+            },
+            "alpine_hope_vmod_qp_qs.png",
+        ),
         # Custom options case
         (
             {
@@ -215,7 +226,7 @@ def test_plot_slip_rise_rake(
             "custom_vmod_plot.png",
         ),
     ],
-    ids=["default", "vs_density", "custom_options"],
+    ids=["default", "vs_density", "qp_qs", "custom_options"],
 )
 def test_plot_velocity_model(
     velocity_model_plot_file: Path,

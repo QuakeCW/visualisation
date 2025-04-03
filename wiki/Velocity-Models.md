@@ -81,11 +81,13 @@ Examples:
 $ plot-1d-velocity-model velocity_model.txt vp_vs_plot.png --panel VP --panel VS
 ```
 
-* To plot Density, Vs, and Qs:
+* To plot Qp and Qs:
 
 ``` bash
-$ plot-1d-velocity-model velocity_model.txt dens_vs_qs.png --panel DENSITY --panel VS --panel QS
+$ plot-1d-velocity-model velocity_model.txt dens_vs_qs.png --panel DENSITY --panel Qp --panel Qs
 ```
+
+![Example plot with Qp and Qs values.](images/alpine_hope_vmod_qp_qs.png)
 
 * To plot all available panels:
 
