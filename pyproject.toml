@@ -20,6 +20,7 @@ plot-srf-rise = "visualisation.sources.plot_rise:app"
 plot-mw-contributions = "visualisation.sources.plot_mw_contributions:app"
 plot-slip-rise-rake = "visualisation.sources.plot_slip_rise_rake:app"
 plot-srf-distribution = "visualisation.sources.plot_srf_distribution:app"
+plot-stoch = "visualisation.sources.plot_stoch:app"
 
 [tool.setuptools.package-dir]
 visualisation = "visualisation"

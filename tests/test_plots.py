@@ -13,10 +13,12 @@ from visualisation.sources import (
     plot_srf_cumulative_moment,
     plot_srf_distribution,
     plot_srf_moment,
+    plot_stoch,
 )
 
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 SRF_FFP = Path(__file__).parent / "srfs" / "rupture_1.srf"
+STOCH_FFP = Path(__file__).parent / "stoch"
 MULTI_SUMMARY_SRF_FFP = Path(__file__).parent / "srfs" / "nevis.srf"
 REALISATION_FFP = Path(__file__).parent / "srfs" / "realisation.json"
 
@@ -56,7 +58,6 @@ def test_plot_functions(
 
 
 def test_plot_mw_contributions(tmp_path: Path):
-
     original = PLOT_IMAGE_DIRECTORY / "example_mw_contributions.png"
     generated = tmp_path / "output.png"
 
@@ -96,6 +97,23 @@ def test_plot_slip_rise_rake_segment(tmp_path: Path):
         segment=1,
         width=15,
         height=30,
+    )
+
+    diff = diffimg.diff(original, output_image_path)
+    assert diff <= 0.05
+
+
+def test_plot_stoch(tmp_path: Path):
+    output_image_path = tmp_path / "output.png"
+    original = PLOT_IMAGE_DIRECTORY / "stoch_example.png"
+
+    plot_stoch.plot_stoch_to_file(
+        STOCH_FFP / "realisation.stoch",
+        output_image_path,
+        width=60,
+        height=20,
+        dpi=300,
+        title="Stoch file",
     )
 
     diff = diffimg.diff(original, output_image_path)
