@@ -273,7 +273,7 @@ def test_plot_velocity_model(
             {
                 "show_geometry": False,
             },
-            "alpine_base_1_no_goemetry.png",
+            "alpine_base_1_no_geometry.png",
         ),
         (
             {"pgv_targets": [5.0, 1.0]},
