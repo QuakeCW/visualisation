@@ -98,6 +98,7 @@ def assert_images_match(
     "plot_function, expected_image_name, plot_kwargs",
     [
         (plot_srf.plot_srf, "srf_plot_example.png", {}),
+        (plot_srf.plot_srf, "srf_plot_example_inset.png", {"show_inset": True}),
         (plot_srf_moment.plot_srf_moment, "srf_moment_rate_example.png", {}),
         (
             plot_srf_cumulative_moment.plot_srf_cumulative_moment,
