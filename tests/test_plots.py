@@ -272,6 +272,7 @@ def test_plot_velocity_model(
 def test_plot_stoch(
     tmp_path: Path,
     plot_image_dir: Path,
+    output_image_path: Path,
     stoch_ffp: Path,
     expected_image_name: str,
     plot_kwargs: dict,
