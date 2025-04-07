@@ -14,6 +14,7 @@ from visualisation.sources import (
     plot_srf_cumulative_moment,
     plot_srf_distribution,
     plot_srf_moment,
+    plot_stoch,
 )
 
 TEST_DATA_DIR = Path(__file__).parent
@@ -35,6 +36,11 @@ def plot_image_dir() -> Path:
 def srf_ffp() -> Path:
     """Path to the primary SRF file for testing."""
     return TEST_DATA_DIR / "srfs" / "rupture_1.srf"
+
+@pytest.fixture(scope="module")
+def stoch_ffp() -> Path:
+    """Path to the stochastic file used for testing."""
+    return TEST_DATA_DIR / "stoch" / "realisation.stoch""
 
 
 @pytest.fixture(scope="module")
@@ -239,6 +245,36 @@ def test_plot_velocity_model(
 
     plot_1d_velocity_model.plot_1d_velocity_model_to_file(
         velocity_model_plot_file,
+        output_image_path,
+        **plot_kwargs,
+    )
+
+    assert_images_match(output_image_path, expected_image_file)
+
+
+@pytest.mark.parametrize(
+    "plot_kwargs, expected_image_name",
+    [
+        # Default case
+        (
+            {
+                "width": 60,
+                "height": 20,
+                "dpi": 300,
+                "title": "Stoch file",
+            },
+            "stoch_example.png",
+        ),
+    ],
+    ids=["custom_options"],
+)
+def test_plot_stoch(
+    tmp_path: Path, stoch_ffp: Path, expected_image_name: str, plot_kwargs: dict
+):
+    expected_image_file = plot_image_dir / expected_image_name
+
+    plot_stoch.plot_stoch_to_file(
+        stoch_ffp,
         output_image_path,
         **plot_kwargs,
     )
