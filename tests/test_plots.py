@@ -37,10 +37,11 @@ def srf_ffp() -> Path:
     """Path to the primary SRF file for testing."""
     return TEST_DATA_DIR / "srfs" / "rupture_1.srf"
 
+
 @pytest.fixture(scope="module")
 def stoch_ffp() -> Path:
     """Path to the stochastic file used for testing."""
-    return TEST_DATA_DIR / "stoch" / "realisation.stoch""
+    return TEST_DATA_DIR / "stoch" / "realisation.stoch"
 
 
 @pytest.fixture(scope="module")
