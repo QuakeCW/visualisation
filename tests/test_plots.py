@@ -270,7 +270,11 @@ def test_plot_velocity_model(
     ids=["custom_options"],
 )
 def test_plot_stoch(
-    tmp_path: Path, stoch_ffp: Path, expected_image_name: str, plot_kwargs: dict
+    tmp_path: Path,
+    plot_image_dir: Path,
+    stoch_ffp: Path,
+    expected_image_name: str,
+    plot_kwargs: dict,
 ):
     expected_image_file = plot_image_dir / expected_image_name
 
