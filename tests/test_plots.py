@@ -14,6 +14,7 @@ from visualisation.sources import (
     plot_srf_cumulative_moment,
     plot_srf_distribution,
     plot_srf_moment,
+    plot_stoch,
 )
 
 TEST_DATA_DIR = Path(__file__).parent
