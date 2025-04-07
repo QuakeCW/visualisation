@@ -82,6 +82,8 @@ def plot_sources(
         The figure to plot on.
     source_config : SourceConfig
         The source configuration to plot.
+    **kwargs : dict
+        Additional keyword arguments to pass to `plot_polygon`.
 
     Examples
     --------
