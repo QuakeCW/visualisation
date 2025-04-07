@@ -120,6 +120,7 @@ def assert_images_match(
     ],
     ids=[  # Optional: Provide clearer test IDs
         "srf_plot",
+        "srf_plot_inset",
         "srf_moment",
         "srf_cumulative_moment",
         "rise_plot",
