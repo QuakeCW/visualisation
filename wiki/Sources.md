@@ -63,6 +63,8 @@ See the help text to find more formatting options. You will probably be interest
 ### With an Inset
 It often helps to provide an overview map that helps the reader know where you rupture is occurring relative to the whole country. To see one, pass the `--show-inset` flag to `plot-srf`.
 
+![SRF plot with inset map](images/srf_plot_example_inset.png)
+
 # Plotting Stoch Files
 Slip models are downsampled at a low resolution and provided to the high frequency simulation code. These stochastic input files (`.stoch` files) contain most of the same information as the SRF files. To plot a stoch file, run
 
