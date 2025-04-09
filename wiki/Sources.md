@@ -63,6 +63,18 @@ See the help text to find more formatting options. You will probably be interest
 ### With an Inset
 It often helps to provide an overview map that helps the reader know where you rupture is occurring relative to the whole country. To see one, pass the `--show-inset` flag to `plot-srf`.
 
+![SRF plot with inset map](images/srf_plot_example_inset.png)
+
+# Plotting Stoch Files
+Slip models are downsampled at a low resolution and provided to the high frequency simulation code. These stochastic input files (`.stoch` files) contain most of the same information as the SRF files. To plot a stoch file, run
+
+``` bash
+$ plot-stoch STOCH_FILE OUTPUT_FILE --title 'Stoch file' --width 40 --height 20
+```
+Adjust the title, height and width to best suit your plots. Each segment of the stoch file is plotted, with the slip statistics and slip in each patch.
+
+![](images/stoch_example.png)
+
 # How Do I Plot a Moment Rate Function?
 
 The tool for this job is `plot-srf-moment`. To plot the SRF moment for a given SRF file type
