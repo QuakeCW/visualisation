@@ -22,6 +22,7 @@ plot-slip-rise-rake = "visualisation.sources.plot_slip_rise_rake:app"
 plot-srf-distribution = "visualisation.sources.plot_srf_distribution:app"
 plot-1d-velocity-model = "visualisation.plot_1d_velocity_model:app"
 plot-stoch = "visualisation.sources.plot_stoch:app"
+plot-ts = "visualisation.plot_ts:app"
 
 [tool.setuptools.package-dir]
 visualisation = "visualisation"
