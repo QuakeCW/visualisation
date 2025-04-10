@@ -29,9 +29,8 @@ NZTM_CRS = ccrs.epsg(2193)
 LATLON_CRS = ccrs.PlateCarree()
 
 
-def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float):
-    """
-    Map the input array x into the 'hot' colormap with linear scaling on alpha.
+def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float, cmap: str = "hot"):
+    """Map the input array x into the 'hot' colormap with linear scaling on alpha.
 
     Parameters
     ----------
@@ -41,11 +40,13 @@ def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float):
         Minimum value for normalisation.
     vmax : float
         Maximum value for normalisation.
+    cmap: str, optional
+        The colour-map to apply to the input array. Default is hot.
 
     Returns
     -------
     np.ndarray
-        RGBA values of the array x mapped using 'hot' colour-map and linear alpha scaling.
+        RGBA values of the array x mapped using the `cmap` colour-map and linear alpha scaling.
     """
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -338,7 +339,7 @@ def animate_low_frequency_mpl_nztm(
     )
 
     if title:
-        fig.suptitle("Ground Motion Simulation", fontsize=16)
+        fig.suptitle(title, fontsize=16)
 
     plt.tight_layout()
 
