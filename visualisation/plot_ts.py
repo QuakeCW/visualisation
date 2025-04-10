@@ -40,7 +40,7 @@ def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float, cmap: str = "
         Minimum value for normalisation.
     vmax : float
         Maximum value for normalisation.
-    cmap: str, optional
+    cmap : str, optional
         The colour-map to apply to the input array. Default is hot.
 
     Returns
