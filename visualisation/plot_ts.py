@@ -50,7 +50,7 @@ def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float, cmap: str = "
     """
     norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
-    cmap = plt.get_cmap("hot")
+    cmap = plt.get_cmap(cmap)
     rgb = cmap(norm(x))[..., :3]
 
     alpha = norm(x)
@@ -312,7 +312,7 @@ def animate_low_frequency_mpl_nztm(
     pcm = ax.pcolormesh(
         xr,
         yr,
-        apply_cmap_with_alpha(initial_data, 0, max_motion),
+        apply_cmap_with_alpha(initial_data, 0, max_motion, cmap=cmap),
         cmap=cmap,
         vmin=0,
         vmax=max_motion,
@@ -369,7 +369,7 @@ def animate_low_frequency_mpl_nztm(
     def update(frame_index: int):  # numpydoc ignore=GL08
         current_data = ground_motion_magnitude[frame_index, :, :]
         pcm.set_array(
-            apply_cmap_with_alpha(current_data, 0, max_motion),
+            apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
         )
 
         current_time = frame_index * xyts_file.dt
