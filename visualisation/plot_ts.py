@@ -357,13 +357,13 @@ def animate_low_frequency_mpl_nztm(
 
     ax.add_geometries(
         [
-            utils.polygon_nztm_to_pygmt(fault.geometry)
+            shapely.transform(fault.geometry, lambda coords: coords[:, ::-1])
             for fault in source_config.source_geometries.values()
         ],
         facecolor="red",
         edgecolor="black",
         zorder=2,
-        crs=LATLON_CRS,
+        crs=NZTM_CRS,
     )
 
     def update(frame_index: int):  # numpydoc ignore=GL08
