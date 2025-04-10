@@ -20,7 +20,6 @@ from tqdm import tqdm
 
 from qcore import cli, coordinates
 from qcore.xyts import XYTSFile
-from visualisation import utils
 from workflow.realisations import SourceConfig
 
 app = typer.Typer()
