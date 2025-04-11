@@ -11,6 +11,7 @@ import shapely
 
 matplotlib.use("Agg")
 
+import cartopy.io.img_tiles as cimgt
 import matplotlib.animation as animation
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -295,6 +296,7 @@ def animate_low_frequency_mpl_nztm(
     fps: Annotated[float, typer.Option()] = 15.0,
     title: Annotated[str | None, typer.Option()] = None,
     zoom: Annotated[float, typer.Option()] = 1,
+    simple_map: Annotated[bool, typer.Option()] = False,
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
@@ -331,6 +333,8 @@ def animate_low_frequency_mpl_nztm(
     zoom : float, optional
         Zoom factor for the map, by default 1.0, on a log-scale. Zoom
         centres on centre of source geometry.
+    simple_map : bool, optional
+        If True, disable OpenStreetMap background and use a simple map.
     """
 
     if not shutil.which("ffmpeg"):
@@ -361,6 +365,13 @@ def animate_low_frequency_mpl_nztm(
             zoom,
         )
     ax.set_extent(map_extent_nztm, crs=NZTM_CRS)
+
+    if simple_map:
+        plot_cartographic_features(ax, scale)
+        plot_towns(ax, map_extent_nztm)
+    else:
+        request = cimgt.OSM()
+        ax.add_image(request, 10, interpolation="spline36", regrid_shape=4000, zorder=0)
 
     xr, yr = xyts_waveform_coordinates(xyts_file)
     initial_data = ground_motion_magnitude[0, :, :]
@@ -397,9 +408,6 @@ def animate_low_frequency_mpl_nztm(
         fig.suptitle(title, fontsize=16)
 
     plt.tight_layout()
-
-    plot_cartographic_features(ax, scale)
-    plot_towns(ax, map_extent_nztm)
 
     ax.add_geometries(
         [shapely.Polygon(nztm_corners)],
