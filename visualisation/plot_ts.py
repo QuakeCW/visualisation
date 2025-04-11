@@ -360,7 +360,10 @@ def animate_low_frequency_mpl_nztm(
     ax.add_geometries(
         [
             shapely.transform(fault.geometry, lambda coords: coords[:, ::-1])
-            for fault in source_config.source_geometries.values()
+            for fault in sorted(
+                source_config.source_geometries.values(),
+                key=lambda fault: -fault.centroid[-1],  # sort by depth for rendering
+            )
         ],
         facecolor="red",
         edgecolor="black",
