@@ -209,6 +209,37 @@ def map_extents(
     return map_extent_nztm
 
 
+def zoom_extents(
+    map_extents: tuple[float, float, float, float],
+    zoom_centre: tuple[float, float],
+    zoom_factor: float,
+):
+    """Zoom the map extents around a given centre point.
+
+    Parameters
+    ----------
+    map_extents : tuple[float, float, float, float]
+        The original map extents (x_min, x_max, y_min, y_max).
+    zoom_centre : tuple[float, float]
+        The centre point for zooming (x, y).
+    zoom_factor : float
+        The zoom factor (1.0 = no zoom, >1.0 = zoom in, <1.0 = zoom out, logarithmic scale).
+    """
+
+    x_min, x_max, y_min, y_max = map_extents
+    x_centre, y_centre = zoom_centre
+    zoom_coefficient = 2 ** (1 - zoom_factor)
+    x_range = (x_max - x_min) * zoom_coefficient
+    y_range = (y_max - y_min) * zoom_coefficient
+
+    new_x_min = x_centre - x_range / 2
+    new_x_max = x_centre + x_range / 2
+    new_y_min = y_centre - y_range / 2
+    new_y_max = y_centre + y_range / 2
+
+    return new_x_min, new_x_max, new_y_min, new_y_max
+
+
 def xyts_waveform_coordinates(xyts_file: XYTSFile) -> np.ndarray:
     """Compute gridpoint coordinates for XYTS waveform.
 
@@ -258,6 +289,7 @@ def animate_low_frequency_mpl_nztm(
     dpi: Annotated[float, typer.Option()] = 150.0,
     fps: Annotated[float, typer.Option()] = 15.0,
     title: Annotated[str | None, typer.Option()] = None,
+    zoom: Annotated[float, typer.Option()] = 1,
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
@@ -291,6 +323,9 @@ def animate_low_frequency_mpl_nztm(
         The frames per second for the animation, by default 15.0.
     title : str | None, optional
         The title for the animation, by default None (no title).
+    zoom : float, optional
+        Zoom factor for the map, by default 1.0, on a log-scale. Zoom
+        centres on centre of source geometry.
     """
 
     if not shutil.which("ffmpeg"):
@@ -309,6 +344,17 @@ def animate_low_frequency_mpl_nztm(
     ax = fig.add_subplot(1, 1, 1, projection=NZTM_CRS)
     nztm_corners = xyts_nztm_corners(xyts_file)
     map_extent_nztm = map_extents(nztm_corners, padding)
+    if zoom != 1:
+        centre = shapely.centroid(
+            shapely.union_all(
+                [fault.geometry for fault in source_config.source_geometries.values()]
+            )
+        )
+        map_extent_nztm = zoom_extents(
+            map_extent_nztm,
+            (centre.y, centre.x),
+            zoom,
+        )
     ax.set_extent(map_extent_nztm, crs=NZTM_CRS)
 
     xr, yr = xyts_waveform_coordinates(xyts_file)
