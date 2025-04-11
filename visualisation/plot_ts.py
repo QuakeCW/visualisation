@@ -542,9 +542,10 @@ def animate_low_frequency_mpl_nztm(
             frame_files = list(
                 tqdm.tqdm(
                     pool.imap(render_frame, range(1, frame_count)),
-                    total=frame_count - 1,
+                    total=frame_count,
                     unit="frame",
                     desc="Rendering frames",
+                    initial=1,
                 )
             )
 
