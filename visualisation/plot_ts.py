@@ -439,7 +439,7 @@ def render_single_frame(
     if title:
         fig.suptitle(title, fontsize=16)
 
-    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+    plt.tight_layout(rect=[0.05, 0.05, 0.95, 0.95])
     cbar = fig.colorbar(
         pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8
     )
