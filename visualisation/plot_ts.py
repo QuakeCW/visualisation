@@ -224,6 +224,11 @@ def zoom_extents(
         The centre point for zooming (x, y).
     zoom_factor : float
         The zoom factor (1.0 = no zoom, >1.0 = zoom in, <1.0 = zoom out, logarithmic scale).
+
+    Returns
+    -------
+    tuple[float, float, float, float]
+        The new map extents after applying the zoom.
     """
 
     x_min, x_max, y_min, y_max = map_extents
