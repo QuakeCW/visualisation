@@ -87,29 +87,32 @@ def plot_towns(ax: plt.Axes) -> None:
         "Wellington": (174.777222, -41.288889),
         "Westport": (171.5997222, -41.7575000),
     }
+    x_min, x_max, y_min, y_max = map_extents
     for town_name, (lon, lat) in towns.items():
-        ax.plot(
-            lon,
-            lat,
-            "o",
-            markersize=4,
-            color="white",
-            markeredgecolor="black",
-            transform=LATLON_CRS,
-            zorder=4,
-        )
+        town_y, town_x = coordinates.wgs_depth_to_nztm(np.array([lat, lon]))
+        if x_min <= town_x <= x_max and y_min <= town_y <= y_max:
+            ax.plot(
+                town_x,
+                town_y,
+                "o",
+                markersize=4,
+                color="white",
+                markeredgecolor="black",
+                transform=NZTM_CRS,
+                zorder=4,
+            )
 
-        ax.text(
-            lon,
-            lat,
-            " " + town_name,
-            fontsize=8,
-            color="black",
-            ha="left",
-            va="center",
-            transform=LATLON_CRS,
-            zorder=5,
-        )
+            ax.text(
+                town_x,
+                town_y,
+                " " + town_name,
+                fontsize=8,
+                color="black",
+                ha="left",
+                va="center",
+                transform=NZTM_CRS,
+                zorder=5,
+            )
 
 
 def plot_cartographic_features(ax: plt.Axes, scale: str) -> None:
@@ -343,7 +346,7 @@ def animate_low_frequency_mpl_nztm(
     plt.tight_layout()
 
     plot_cartographic_features(ax, scale)
-    plot_towns(ax)
+    plot_towns(ax, map_extent_nztm)
 
     ax.add_geometries(
         [shapely.Polygon(nztm_corners)],
