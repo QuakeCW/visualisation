@@ -323,7 +323,44 @@ def render_single_frame(
     height,
     dpi,
 ):
-    """Render a single frame of the animation."""
+    """Render a single frame of the animation.
+    Parameters
+    ----------
+    frame_index : int
+        The index of the frame to render.
+    dt : float
+        The time step of the simulation.
+    ground_motion_magnitude : np.ndarray
+        The ground motion magnitude data.
+    max_motion : float
+        The maximum ground motion value for color scaling.
+    cmap : str
+        The colormap to use for the animation.
+    source_config : SourceConfig
+        The source configuration object.
+    nztm_corners : np.ndarray
+        The corners of the XYTS domain in NZTM coordinates.
+    map_extent_nztm : tuple[float, float, float, float]
+        The map extents for the figure (x_min, x_max, y_min, y_max).
+    xr : np.ndarray
+        The x coordinates of the gridpoints in NZTM coordinates.
+    yr : np.ndarray
+        The y coordinates of the gridpoints in NZTM coordinates.
+    simple_map : bool
+        If True, disable OpenStreetMap background and use a simple map.
+    scale : str
+        The scale for cartographic features.
+    map_quality : int
+        The quality of the map (lower values are lower quality).
+    title : str | None
+        The title for the animation.
+    width : float
+        The width of the figure in cm.
+    height : float
+        The height of the figure in cm.
+    dpi : float
+        The DPI for the figure.
+    """
     # Create a new figure for this frame
     cm = 1 / 2.54
     fig = plt.figure(figsize=(width * cm, height * cm))
