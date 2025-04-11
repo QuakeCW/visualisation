@@ -1,6 +1,10 @@
 """Create simulation video of surface ground motion levels."""
 
+import functools
+import os
 import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 from typing import Annotated
 
@@ -11,13 +15,15 @@ import shapely
 
 matplotlib.use("Agg")
 
+import multiprocessing as mp
+
 import cartopy.io.img_tiles as cimgt
 import matplotlib.animation as animation
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import tqdm
 import typer
-from tqdm import tqdm
 
 from qcore import cli, coordinates
 from qcore.xyts import XYTSFile
@@ -59,7 +65,7 @@ def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float, cmap: str = "
     return np.clip(rgba, 0, 1)
 
 
-def plot_towns(ax: plt.Axes, map_extents: tuple[float, float, float, float]) -> None:
+def plot_towns(ax: plt.Axes, map_extents: tuple[float, float, float, float]) -> list:
     """Plot towns on the map.
 
     Parameters
@@ -91,34 +97,40 @@ def plot_towns(ax: plt.Axes, map_extents: tuple[float, float, float, float]) -> 
         "Westport": (171.5997222, -41.7575000),
     }
     x_min, x_max, y_min, y_max = map_extents
+    features = []
     for town_name, (lon, lat) in towns.items():
         town_y, town_x = coordinates.wgs_depth_to_nztm(np.array([lat, lon]))
         if x_min <= town_x <= x_max and y_min <= town_y <= y_max:
-            ax.plot(
-                town_x,
-                town_y,
-                "o",
-                markersize=4,
-                color="white",
-                markeredgecolor="black",
-                transform=NZTM_CRS,
-                zorder=4,
+            features.append(
+                ax.plot(
+                    town_x,
+                    town_y,
+                    "o",
+                    markersize=4,
+                    color="white",
+                    markeredgecolor="black",
+                    transform=NZTM_CRS,
+                    zorder=4,
+                )[0]
             )
 
-            ax.text(
-                town_x,
-                town_y,
-                " " + town_name,
-                fontsize=8,
-                color="black",
-                ha="left",
-                va="center",
-                transform=NZTM_CRS,
-                zorder=5,
+            features.append(
+                ax.text(
+                    town_x,
+                    town_y,
+                    " " + town_name,
+                    fontsize=8,
+                    color="black",
+                    ha="left",
+                    va="center",
+                    transform=NZTM_CRS,
+                    zorder=5,
+                )
             )
+    return features
 
 
-def plot_cartographic_features(ax: plt.Axes, scale: str) -> None:
+def plot_cartographic_features(ax: plt.Axes, scale: str) -> list:
     """Add cartographic features to the map.
 
     Parameters
@@ -128,28 +140,39 @@ def plot_cartographic_features(ax: plt.Axes, scale: str) -> None:
     scale : str
         The scale for the cartographic features.
     """
-    ax.add_feature(cfeature.LAND.with_scale(scale), facecolor="#dcdcdc", zorder=1)
+    features = []
+    features.append(
+        ax.add_feature(cfeature.LAND.with_scale(scale), facecolor="#dcdcdc", zorder=1)
+    )
 
-    ax.add_feature(cfeature.OCEAN.with_scale(scale), facecolor="#b0c4de", zorder=0)
-    ax.add_feature(
-        cfeature.COASTLINE.with_scale(scale),
-        linewidth=0.5,
-        edgecolor="black",
-        zorder=2,
+    features.append(
+        ax.add_feature(cfeature.OCEAN.with_scale(scale), facecolor="#b0c4de", zorder=0)
     )
-    ax.add_feature(
-        cfeature.BORDERS.with_scale(scale),
-        linestyle=":",
-        edgecolor="grey",
-        zorder=1,
+    features.append(
+        ax.add_feature(
+            cfeature.COASTLINE.with_scale(scale),
+            linewidth=0.5,
+            edgecolor="black",
+            zorder=2,
+        )
     )
-    ax.add_feature(
-        cfeature.LAKES.with_scale(scale),
-        alpha=0.5,
-        facecolor="#b0c4de",
-        edgecolor="black",
-        linewidth=0.2,
-        zorder=1,
+    features.append(
+        ax.add_feature(
+            cfeature.BORDERS.with_scale(scale),
+            linestyle=":",
+            edgecolor="grey",
+            zorder=1,
+        )
+    )
+    features.append(
+        ax.add_feature(
+            cfeature.LAKES.with_scale(scale),
+            alpha=0.5,
+            facecolor="#b0c4de",
+            edgecolor="black",
+            linewidth=0.2,
+            zorder=1,
+        )
     )
 
     gl = ax.gridlines(
@@ -159,6 +182,8 @@ def plot_cartographic_features(ax: plt.Axes, scale: str) -> None:
     gl.right_labels = False
     gl.xlabel_style = {"size": 8, "rotation": 45}
     gl.ylabel_style = {"size": 8}
+    features.append(gl)
+    return features
 
 
 def xyts_nztm_corners(xyts_file: XYTSFile) -> np.ndarray:
@@ -279,6 +304,118 @@ def xyts_waveform_coordinates(xyts_file: XYTSFile) -> np.ndarray:
     return coords_nztm[::-1, :, :]  # Reverse order to (x, y) for NZTM
 
 
+def render_single_frame(
+    frame_index,
+    dt,
+    ground_motion_magnitude,
+    max_motion,
+    cmap,
+    source_config,
+    nztm_corners,
+    map_extent_nztm,
+    xr,
+    yr,
+    simple_map,
+    scale,
+    map_quality,
+    title,
+    width,
+    height,
+    dpi,
+):
+    """Render a single frame of the animation."""
+    # Create a new figure for this frame
+    cm = 1 / 2.54
+    fig = plt.figure(figsize=(width * cm, height * cm))
+    ax = fig.add_subplot(1, 1, 1, projection=NZTM_CRS)
+    ax.set_extent(map_extent_nztm, crs=NZTM_CRS)
+
+    # Add all static elements
+    if simple_map:
+        plot_cartographic_features(ax, scale)
+        plot_towns(ax, map_extent_nztm)
+    else:
+        request = cimgt.OSM(cache=True)
+        request._MAX_THREADS = (
+            1  # Limit to one thread because it is in a multiprocess pool.
+        )
+        ax.add_image(
+            request,
+            10,
+            interpolation="spline36",
+            regrid_shape=map_quality * 1000,
+            zorder=0,
+        )
+
+    ax.add_geometries(
+        [shapely.Polygon(nztm_corners)],
+        facecolor="none",
+        edgecolor="black",
+        linestyle="--",
+        zorder=1,
+        crs=NZTM_CRS,
+    )
+
+    ax.add_geometries(
+        [
+            shapely.transform(fault.geometry, lambda coords: coords[:, ::-1])
+            for fault in sorted(
+                source_config.source_geometries.values(),
+                key=lambda fault: -fault.centroid[-1],
+            )
+        ],
+        facecolor="red",
+        edgecolor="black",
+        zorder=2,
+        crs=NZTM_CRS,
+    )
+
+    # Add the actual data for this frame
+    current_data = ground_motion_magnitude[frame_index, :, :]
+    pcm = ax.pcolormesh(
+        xr,
+        yr,
+        apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
+        cmap=cmap,
+        vmin=0,
+        vmax=max_motion,
+        shading="gouraud",
+        zorder=3,
+        rasterized=True,
+    )
+
+    # Add time text
+    current_time = frame_index * dt
+    ax.text(
+        0.98,
+        0.02,
+        f"Time: {current_time:.2f} s",
+        transform=ax.transAxes,
+        fontsize=12,
+        color="black",
+        fontweight="bold",
+        ha="right",
+        va="bottom",
+        bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
+    )
+
+    if title:
+        fig.suptitle(title, fontsize=16)
+
+    plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+    cbar = fig.colorbar(
+        pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8
+    )
+    cbar.set_label("Ground Motion (cm/s)")
+
+    # Save the frame to a file
+    frame_filename = f"frame_{frame_index:04d}.png"
+    plt.savefig(frame_filename, dpi=dpi)
+    plt.close(fig)
+
+    return frame_filename
+
+
 @cli.from_docstring(app)
 def animate_low_frequency_mpl_nztm(
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
@@ -297,6 +434,7 @@ def animate_low_frequency_mpl_nztm(
     title: Annotated[str | None, typer.Option()] = None,
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
+    map_quality: Annotated[int, typer.Option()] = 4,
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
@@ -335,13 +473,19 @@ def animate_low_frequency_mpl_nztm(
         centres on centre of source geometry.
     simple_map : bool, optional
         If True, disable OpenStreetMap background and use a simple map.
+    map_quality : int, optional
+        The quality of the map, by default 4. Has no effect if using a
+        simple map. Lower values have lower quality but render faster.
     """
-
-    if not shutil.which("ffmpeg"):
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
         print(
             "You must have ffmpeg installed. See https://ffmpeg.org/download.html.",
         )
         raise typer.Exit(code=1)
+
+    if dpi % 2:
+        dpi += 1
 
     cm = 1 / 2.54
     source_config = SourceConfig.read_from_realisation(realisation_ffp)
@@ -349,10 +493,9 @@ def animate_low_frequency_mpl_nztm(
 
     ground_motion_magnitude = np.linalg.norm(xyts_file.data, axis=1)
 
-    fig = plt.figure(figsize=(width * cm, height * cm))
-    ax = fig.add_subplot(1, 1, 1, projection=NZTM_CRS)
     nztm_corners = xyts_nztm_corners(xyts_file)
     map_extent_nztm = map_extents(nztm_corners, padding)
+
     if zoom != 1:
         centre = shapely.centroid(
             shapely.union_all(
@@ -364,103 +507,63 @@ def animate_low_frequency_mpl_nztm(
             (centre.y, centre.x),
             zoom,
         )
-    ax.set_extent(map_extent_nztm, crs=NZTM_CRS)
-
-    if simple_map:
-        plot_cartographic_features(ax, scale)
-        plot_towns(ax, map_extent_nztm)
-    else:
-        request = cimgt.OSM()
-        ax.add_image(request, 10, interpolation="spline36", regrid_shape=4000, zorder=0)
-
-    xr, yr = xyts_waveform_coordinates(xyts_file)
-    initial_data = ground_motion_magnitude[0, :, :]
-    pcm = ax.pcolormesh(
-        xr,
-        yr,
-        apply_cmap_with_alpha(initial_data, 0, max_motion, cmap=cmap),
-        cmap=cmap,
-        vmin=0,
-        vmax=max_motion,
-        shading=shading,
-        zorder=3,
-        rasterized=True,
-    )
-    cbar = fig.colorbar(
-        pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8
-    )
-    cbar.set_label("Ground Motion (cm/s)")
-
-    time_text = ax.text(
-        0.98,
-        0.02,
-        "",
-        transform=ax.transAxes,
-        fontsize=12,
-        color="black",
-        fontweight="bold",
-        ha="right",
-        va="bottom",
-        bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
-    )
-
-    if title:
-        fig.suptitle(title, fontsize=16)
-
-    plt.tight_layout()
-
-    ax.add_geometries(
-        [shapely.Polygon(nztm_corners)],
-        facecolor="none",
-        edgecolor="black",
-        linestyle="--",
-        zorder=1,
-        crs=NZTM_CRS,
-    )
-
-    ax.add_geometries(
-        [
-            shapely.transform(fault.geometry, lambda coords: coords[:, ::-1])
-            for fault in sorted(
-                source_config.source_geometries.values(),
-                key=lambda fault: -fault.centroid[-1],  # sort by depth for rendering
-            )
-        ],
-        facecolor="red",
-        edgecolor="black",
-        zorder=2,
-        crs=NZTM_CRS,
-    )
-
-    def update(frame_index: int):  # numpydoc ignore=GL08
-        current_data = ground_motion_magnitude[frame_index, :, :]
-        pcm.set_array(
-            apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
-        )
-
-        current_time = frame_index * xyts_file.dt
-        time_text.set_text(f"Time: {current_time:.2f} s")
-
-        return pcm, time_text
 
     frame_count = frame_count or xyts_file.nt
-    anim = animation.FuncAnimation(
-        fig, update, frames=frame_count, interval=1000 / fps, blit=True
-    )
+    xr, yr = xyts_waveform_coordinates(xyts_file)
 
-    pbar = tqdm(total=frame_count, unit="frame", desc="Rendering")
+    with tempfile.TemporaryDirectory() as temp_dir:
+        render_frame = functools.partial(
+            render_single_frame,
+            dt=xyts_file.dt,
+            ground_motion_magnitude=ground_motion_magnitude,
+            max_motion=max_motion,
+            cmap=cmap,
+            source_config=source_config,
+            nztm_corners=nztm_corners,
+            map_extent_nztm=map_extent_nztm,
+            xr=xr,
+            yr=yr,
+            simple_map=simple_map,
+            scale=scale,
+            map_quality=map_quality,
+            title=title,
+            width=width,
+            height=height,
+            dpi=dpi,
+        )
 
-    def progress_callback(
-        current_frame: int, total_frames: int
-    ):  # numpydoc ignore=GL08
-        pbar.update(1)
+        # warm the OSM cache to speed up rendering by rendering the first frame
+        os.chdir(temp_dir)
 
-    anim.save(
-        output_mp4,
-        writer="ffmpeg",
-        dpi=dpi,
-        progress_callback=progress_callback,
-    )
+        render_frame(0)
 
-    pbar.close()
-    plt.close(fig)
+        with mp.Pool() as pool:
+            # Render all frames in parallel
+            frame_files = list(
+                tqdm.tqdm(
+                    pool.imap(render_frame, range(1, frame_count)),
+                    total=frame_count - 1,
+                    unit="frame",
+                    desc="Rendering frames",
+                )
+            )
+
+        # Use ffmpeg to combine frames into video
+        print("Combining frames into video...")
+        ffmpeg_cmd = [
+            ffmpeg,
+            "-y",  # Overwrite output file if it exists
+            "-framerate",
+            str(fps),
+            "-i",
+            "frame_%04d.png",
+            "-c:v",
+            "libx264",
+            "-pix_fmt",
+            "yuv420p",
+            "-crf",
+            "23",  # Quality setting (lower is better)
+            str(output_mp4),
+        ]
+
+        subprocess.run(ffmpeg_cmd, check=True)
