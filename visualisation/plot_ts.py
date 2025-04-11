@@ -58,13 +58,15 @@ def apply_cmap_with_alpha(x: np.ndarray, vmin: float, vmax: float, cmap: str = "
     return np.clip(rgba, 0, 1)
 
 
-def plot_towns(ax: plt.Axes) -> None:
+def plot_towns(ax: plt.Axes, map_extents: tuple[float, float, float, float]) -> None:
     """Plot towns on the map.
 
     Parameters
     ----------
     ax : plt.Axes
         The axes to plot the towns on.
+    map_extents : tuple of float
+        The extents of the map in NZTM coordinates.
     """
     towns = {
         "Blenheim": (173.9569444, -41.5138888),
