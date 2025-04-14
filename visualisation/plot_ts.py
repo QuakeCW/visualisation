@@ -597,6 +597,8 @@ def animate_low_frequency_mpl_nztm(
             "frame_%04d.png",
             "-c:v",
             "libx264",
+            "-vf",
+            "pad=ceil(iw/2)*2:ceil(ih/2)*2",
             "-pix_fmt",
             "yuv420p",
             "-crf",
