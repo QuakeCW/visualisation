@@ -457,7 +457,9 @@ def render_single_frame(
 def animate_low_frequency_mpl_nztm(
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     xyts_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
-    output_mp4: Annotated[Path, typer.Argument(writable=True, dir_okay=False)],
+    output_mp4: Annotated[
+        Path, typer.Argument(writable=True, dir_okay=False, resolve_path=True)
+    ],
     max_motion: Annotated[float, typer.Option()] = 10.0,
     padding: Annotated[float, typer.Option()] = 5.0,
     cmap: Annotated[str, typer.Option()] = "hot",
@@ -587,7 +589,7 @@ def animate_low_frequency_mpl_nztm(
             )
 
         # Use ffmpeg to combine frames into video
-        print("Combining frames into video...")
+
         ffmpeg_cmd = [
             ffmpeg,
             "-y",  # Overwrite output file if it exists
