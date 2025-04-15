@@ -18,7 +18,6 @@ matplotlib.use("Agg")
 import multiprocessing as mp
 
 import cartopy.io.img_tiles as cimgt
-import matplotlib.animation as animation
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
