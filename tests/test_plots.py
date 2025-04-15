@@ -40,6 +40,18 @@ def srf_ffp() -> Path:
 
 
 @pytest.fixture(scope="module")
+def stoch_ffp() -> Path:
+    """Path to the stochastic file used for testing."""
+    return TEST_DATA_DIR / "stoch" / "realisation.stoch"
+
+
+@pytest.fixture(scope="module")
+def domain_realisation_ffp() -> Path:
+    """Path to the domain realisation file used for testing."""
+    return TEST_DATA_DIR / "realisation" / "realisation.json"
+
+
+@pytest.fixture(scope="module")
 def multi_summary_srf_ffp() -> Path:
     """Path to the SRF file used for multi-summary plots."""
     return TEST_DATA_DIR / "srfs" / "nevis.srf"
@@ -99,6 +111,11 @@ def assert_images_match(
     "plot_function, expected_image_name, plot_kwargs",
     [
         (plot_srf.plot_srf, "srf_plot_example.png", {}),
+        (
+            plot_srf.plot_srf,
+            "srf_plot_example_inset.png",
+            {"show_inset": True, "latitude_pad": 0.1, "longitude_pad": 0.1},
+        ),
         (plot_srf_moment.plot_srf_moment, "srf_moment_rate_example.png", {}),
         (
             plot_srf_cumulative_moment.plot_srf_cumulative_moment,
@@ -116,6 +133,7 @@ def assert_images_match(
     ],
     ids=[  # Optional: Provide clearer test IDs
         "srf_plot",
+        "srf_plot_inset",
         "srf_moment",
         "srf_cumulative_moment",
         "rise_plot",
@@ -259,51 +277,75 @@ def test_plot_velocity_model(
     [
         # Default case
         ({}, "alpine_base_1.png"),
-        # Padded case
         (
             {
                 "latitude_pad": 0.5,
                 "longitude_pad": 0.5,
-                "title": "Padded Domain",
                 "width": 15,
+                "title": "Padded Domain",
             },
             "alpine_base_1_padded.png",
         ),
-        # No geometry case
         (
-            {
-                "show_geometry": False,
-            },
+            {"show_geometry": False},
             "alpine_base_1_no_geometry.png",
         ),
         (
             {"pgv_targets": [5.0, 1.0]},
             "alpine_base_1_pgv_targets.png",
         ),
-        ({"stations": STATIONS_FFP}, "alpine_base_1_stations.png"),
-        # Custom options case
-    ],
-    ids=[
-        "default",
-        "padded",
-        "no_geometry",
-        "pgv_targets",
-        "stations",
+        (
+            {"stations": STATIONS_FFP},
+            "alpine_base_1_stations.png",
+        ),
     ],
 )
-def test_plot_realisation(
-    realisation_base_file: Path,
-    output_image_path: Path,
+def test_realisation_plot(
     plot_image_dir: Path,
-    plot_kwargs: dict,
+    output_image_path: Path,
+    domain_realisation_ffp: Path,
     expected_image_name: str,
+    plot_kwargs: dict,
+):
+    expected_image_file = plot_image_dir / expected_image_name
+    realisation.plot_realisation_to_file(
+        domain_realisation_ffp,
+        output_image_path,
+        **plot_kwargs,
+    )
+
+    assert_images_match(output_image_path, expected_image_file)
+
+
+@pytest.mark.parametrize(
+    "plot_kwargs, expected_image_name",
+    [
+        # Default case
+        (
+            {
+                "width": 60,
+                "height": 20,
+                "dpi": 300,
+                "title": "Stoch file",
+            },
+            "stoch_example.png",
+        ),
+    ],
+    ids=["custom_options"],
+)
+def test_plot_stoch(
+    tmp_path: Path,
+    plot_image_dir: Path,
+    output_image_path: Path,
+    stoch_ffp: Path,
+    expected_image_name: str,
+    plot_kwargs: dict,
 ):
     expected_image_file = plot_image_dir / expected_image_name
 
-    realisation.plot_realisation_to_file(
-        realisation_base_file,
+    plot_stoch.plot_stoch_to_file(
+        stoch_ffp,
         output_image_path,
-        **plot_kwargs,
     )
 
     assert_images_match(output_image_path, expected_image_file)
@@ -315,10 +357,7 @@ def test_plot_rupture_path(
     plot_image_dir: Path,
 ):
     expected_image_file = plot_image_dir / "alpine_hope_1_path.png"
-
     plot_rupture_path.plot_rupture_path_to_file(
-        velocity_model_plot_file,
-        output_image_path,
+        velocity_model_plot_file, output_image_path
     )
-
     assert_images_match(output_image_path, expected_image_file)
