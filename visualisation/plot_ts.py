@@ -305,23 +305,23 @@ def xyts_waveform_coordinates(xyts_file: XYTSFile) -> np.ndarray:
 
 
 def render_single_frame(
-    frame_index,
-    dt,
-    ground_motion_magnitude,
-    max_motion,
-    cmap,
-    source_config,
-    nztm_corners,
-    map_extent_nztm,
-    xr,
-    yr,
-    simple_map,
-    scale,
-    map_quality,
-    title,
-    width,
-    height,
-    dpi,
+    frame_index: int,
+    dt: float,
+    ground_motion_magnitude: np.ndarray,
+    max_motion: float,
+    cmap: str,
+    source_config: SourceConfig,
+    nztm_corners: np.ndarray,
+    map_extent_nztm: tuple[float, float, float, float],
+    xr: np.ndarray,
+    yr: np.ndarray,
+    simple_map: bool,
+    scale: str,
+    map_quality: int,
+    title: str | None,
+    width: float,
+    height: float,
+    dpi: float,
 ):
     """Render a single frame of the animation.
     Parameters
@@ -526,7 +526,6 @@ def animate_low_frequency_mpl_nztm(
     if dpi % 2:
         dpi += 1
 
-    cm = 1 / 2.54
     source_config = SourceConfig.read_from_realisation(realisation_ffp)
     xyts_file = XYTSFile(xyts_ffp)
 
@@ -578,7 +577,7 @@ def animate_low_frequency_mpl_nztm(
 
         with mp.Pool() as pool:
             # Render all frames in parallel
-            frame_files = list(
+            _ = list(
                 tqdm.tqdm(
                     pool.imap(render_frame, range(1, frame_count)),
                     total=frame_count,
