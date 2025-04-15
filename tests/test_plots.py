@@ -4,7 +4,9 @@ from pathlib import Path
 import diffimg
 import pytest
 
-from visualisation import plot_1d_velocity_model
+from visualisation import plot_1d_velocity_model, realisation
+
+####### Ancestor
 from visualisation.sources import (
     plot_mw_contributions,
     plot_rakes,
@@ -20,6 +22,8 @@ from visualisation.sources import (
 TEST_DATA_DIR = Path(__file__).parent
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
 DEFAULT_IMAGE_DIFF_TOLERANCE = 0.05
+
+STATIONS_FFP = Path("tests") / "realisation" / "stations.ll"
 
 
 @pytest.fixture(scope="module")
@@ -42,6 +46,12 @@ def srf_ffp() -> Path:
 def stoch_ffp() -> Path:
     """Path to the stochastic file used for testing."""
     return TEST_DATA_DIR / "stoch" / "realisation.stoch"
+
+
+@pytest.fixture(scope="module")
+def domain_realisation_ffp() -> Path:
+    """Path to the domain realisation file used for testing."""
+    return TEST_DATA_DIR / "realisation" / "realisation.json"
 
 
 @pytest.fixture(scope="module")
@@ -252,6 +262,51 @@ def test_plot_velocity_model(
 
     plot_1d_velocity_model.plot_1d_velocity_model_to_file(
         velocity_model_plot_file,
+        output_image_path,
+        **plot_kwargs,
+    )
+
+    assert_images_match(output_image_path, expected_image_file)
+
+
+@pytest.mark.parametrize(
+    "plot_kwargs, expected_image_name",
+    [
+        # Default case
+        ({}, "alpine_base_1.png"),
+        (
+            {
+                "latitude_pad": 0.5,
+                "longitude_pad": 0.5,
+                "width": 15,
+                "title": "Padded Domain",
+            },
+            "alpine_base_1_padded.png",
+        ),
+        (
+            {"show_geometry": False},
+            "alpine_base_1_no_geometry.png",
+        ),
+        (
+            {"pgv_targets": [5.0, 1.0]},
+            "alpine_base_1_pgv_targets.png",
+        ),
+        (
+            {"stations": STATIONS_FFP},
+            "alpine_base_1_stations.png",
+        ),
+    ],
+)
+def test_realisation_plotting(
+    plot_image_dir: Path,
+    output_image_path: Path,
+    domain_realisation_ffp: Path,
+    expected_image_name: str,
+    plot_kwargs: dict,
+):
+    expected_image_file = plot_image_dir / expected_image_name
+    realisation.plot_realisation_to_file(
+        domain_realisation_ffp,
         output_image_path,
         **plot_kwargs,
     )
