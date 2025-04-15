@@ -74,6 +74,11 @@ def plot_towns(ax: plt.Axes, map_extents: tuple[float, float, float, float]) -> 
         The axes to plot the towns on.
     map_extents : tuple of float
         The extents of the map in NZTM coordinates.
+
+    Returns
+    -------
+    list of artists
+        The list of artists created by this function, two per town.
     """
     towns = {
         "Blenheim": (173.9569444, -41.5138888),
@@ -139,6 +144,11 @@ def plot_cartographic_features(ax: plt.Axes, scale: str) -> list:
         The axes to plot the features on.
     scale : str
         The scale for the cartographic features.
+
+    Returns
+    -------
+    list of artists
+            The list of artists created by this function.
     """
     features = []
     features.append(
@@ -322,8 +332,9 @@ def render_single_frame(
     width: float,
     height: float,
     dpi: float,
-):
+) -> str:
     """Render a single frame of the animation.
+
     Parameters
     ----------
     frame_index : int
@@ -360,6 +371,11 @@ def render_single_frame(
         The height of the figure in cm.
     dpi : float
         The DPI for the figure.
+
+    Returns
+    -------
+    str
+        The filename of the saved frame.
     """
     # Create a new figure for this frame
     cm = 1 / 2.54
