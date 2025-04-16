@@ -346,6 +346,7 @@ def test_plot_stoch(
     plot_stoch.plot_stoch_to_file(
         stoch_ffp,
         output_image_path,
+        **plot_kwargs,
     )
 
     assert_images_match(output_image_path, expected_image_file)
