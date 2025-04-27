@@ -1,4 +1,5 @@
 diffimg
+cartopy
 matplotlib
 numpy
 pygmt
@@ -15,3 +16,4 @@ pytest
 pytest-cov
 pytest-xdist
 typer
+tqdm

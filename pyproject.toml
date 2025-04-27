@@ -23,6 +23,7 @@ plot-slip-rise-rake = "visualisation.sources.plot_slip_rise_rake:app"
 plot-srf-distribution = "visualisation.sources.plot_srf_distribution:app"
 plot-1d-velocity-model = "visualisation.plot_1d_velocity_model:app"
 plot-stoch = "visualisation.sources.plot_stoch:app"
+plot-ts = "visualisation.plot_ts:app"
 
 [tool.setuptools.package-dir]
 visualisation = "visualisation"
@@ -76,7 +77,11 @@ known-first-party = [
 "__init__.py" = ["D104"]
 # Ignore docstring errors in tests folder
 "tests/**.py" = ["D"]
-# ignore everything in the ccld.py module
+
+[tool.coverage.run]
+omit = [
+     "visualisation/plot_ts.py"
+]
 
 [tool.numpydoc_validation]
 checks = [
