@@ -654,11 +654,10 @@ def animate_srf_slip_times(
     output_mp4: Annotated[
         Path, typer.Argument(writable=True, dir_okay=False, resolve_path=True)
     ],
-    max_motion: Annotated[float, typer.Option()] = 10.0,
+    max_slip: Annotated[float, typer.Option()] = 10.0,
     padding: Annotated[float, typer.Option()] = 5.0,
     cmap: Annotated[str, typer.Option()] = "hot",
     scale: Annotated[str, typer.Option()] = "10m",
-    shading: Annotated[str, typer.Option()] = "gouraud",
     frame_count: Annotated[int | None, typer.Option()] = None,
     width: Annotated[float, typer.Option()] = 30.0,
     height: Annotated[float, typer.Option()] = 30.0,
@@ -680,16 +679,14 @@ def animate_srf_slip_times(
         The input srf file containing the simulation data.
     output_mp4 : Path
         The output file path for the generated animation.
-    max_motion : float, optional
-        The maximum ground motion value for color scaling, by default 10.0.
+    max_slip : float, optional
+        The slip (not ground motion) for color scaling, by default 10.0 cm.
     padding : float, optional
         The padding in km for the map extent, by default 5.0.
     cmap : str, optional
         The colormap to use for the animation, by default "hot".
     scale : str, optional
         The scale for cartopy features, by default "10m".
-    shading : str, optional
-        The shading method for `plt.pcolormesh`, by default "gouraud".
     frame_count : int | None, optional
         The number of frames to display in the animation, by default None (uses all frames).
     width : float, optional
@@ -817,8 +814,19 @@ def animate_srf_slip_times(
         init_y,
         c=init_z,
         cmap=cmap,
+        vmin=0,
+        vmax=max_slip,
         transform=NZTM_CRS,
         zorder=100,
+    )
+    fig.colorbar(
+        scat,
+        ax=ax,
+        orientation="vertical",
+        pad=0.02,
+        aspect=30,
+        shrink=0.8,
+        label="Slip (cm)",
     )
 
     def initial_frame() -> None:  # numpydoc ignore=GL08
