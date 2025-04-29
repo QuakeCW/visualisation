@@ -831,12 +831,8 @@ def animate_srf_slip_times(
     ) -> list:  # numpydoc ignore=GL08
         # Create a new figure for this frame
         slip_index = frame_index * frame_dt
-        # Add all static elements
-        interval_slip_mean = slip[:, slip_index].todense()
         slip_end = min(slip_index + frame_dt, srf_file.nt)
-        for j in range(slip_index, slip_end):
-            interval_slip_mean += slip[:, j].todense()
-        interval_slip_mean /= slip_end - slip_index
+        interval_slip_mean = slip[:, list(range(slip_index, slip_end))].mean(axis=1)
         # Add the actual data for this frame
         cur_x, cur_y, z = non_zero_data_points(
             x,
