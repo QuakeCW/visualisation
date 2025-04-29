@@ -1,6 +1,7 @@
 """Create simulation video of surface ground motion levels."""
 
 import functools
+import multiprocessing as mp
 import os
 import shutil
 import subprocess
@@ -10,23 +11,24 @@ from typing import Annotated
 
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+import cartopy.io.img_tiles as cimgt
 import matplotlib
-import shapely
 
 matplotlib.use("Agg")
 
-import multiprocessing as mp
-
-import cartopy.io.img_tiles as cimgt
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy as sp
+import shapely
 import tqdm
 import typer
+from matplotlib.animation import FFMpegWriter, FuncAnimation
 
 from qcore import cli, coordinates
 from qcore.xyts import XYTSFile
-from workflow.realisations import SourceConfig
+from source_modelling import srf
+from workflow.realisations import DomainParameters, SourceConfig
 
 app = typer.Typer()
 
@@ -280,7 +282,7 @@ def zoom_extents(
     return new_x_min, new_x_max, new_y_min, new_y_max
 
 
-def xyts_waveform_coordinates(xyts_file: XYTSFile) -> np.ndarray:
+def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarray:
     """Compute gridpoint coordinates for XYTS waveform.
 
     Parameters
@@ -295,12 +297,7 @@ def xyts_waveform_coordinates(xyts_file: XYTSFile) -> np.ndarray:
         A numpy array of shape (2 x ny x nx) containing the x and y
         coordinates of gridpoints in the NZTM coordinate system.
     """
-    corners_geo = np.array(xyts_file.corners())
-    nztm_corners = coordinates.wgs_depth_to_nztm(corners_geo[:, ::-1])
-
-    norm_xi, norm_eta = np.meshgrid(
-        np.linspace(0, 1, xyts_file.nx), np.linspace(0, 1, xyts_file.ny)
-    )
+    norm_xi, norm_eta = np.meshgrid(np.linspace(0, 1, nx), np.linspace(0, 1, ny))
     origin = nztm_corners[0]  # Bottom-left corner (x0, y0) in NZTM
     vec_x = nztm_corners[1] - origin  # Vector along xi axis (bottom edge) in NZTM
     vec_y = nztm_corners[3] - origin  # Vector along eta axis (left edge) in NZTM
@@ -388,9 +385,6 @@ def render_single_frame(
         plot_towns(ax, map_extent_nztm)
     else:
         request = cimgt.OSM(cache=True)
-        request._MAX_THREADS = (
-            1  # Limit to one thread because it is in a multiprocess pool.
-        )
         ax.add_image(
             request,
             10,
@@ -460,15 +454,10 @@ def render_single_frame(
     )
     cbar.set_label("Ground Motion (cm/s)")
 
-    # Save the frame to a file
-    frame_filename = f"frame_{frame_index:04d}.png"
-    plt.savefig(frame_filename, dpi=dpi)
-    plt.close(fig)
-
-    return frame_filename
+    return [ax]
 
 
-@cli.from_docstring(app)
+@cli.from_docstring(app, name="xyts")
 def animate_low_frequency_mpl_nztm(
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     xyts_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
@@ -562,7 +551,7 @@ def animate_low_frequency_mpl_nztm(
         )
 
     frame_count = frame_count or xyts_file.nt
-    xr, yr = xyts_waveform_coordinates(xyts_file)
+    xr, yr = waveform_coordinates(nztm_corners, xyts_file.nx, xyts_file.ny)
 
     with tempfile.TemporaryDirectory() as temp_dir:
         render_frame = functools.partial(
@@ -623,3 +612,239 @@ def animate_low_frequency_mpl_nztm(
         ]
 
         subprocess.run(ffmpeg_cmd, check=True)
+
+
+def non_zero_data_points(
+    x: np.ndarray, y: np.ndarray, z: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Get the non-zero data points in the 3D array.
+
+    Parameters
+    ----------
+    x : np.ndarray
+            The x coordinates of the data points.
+    y : np.ndarray
+            The y coordinates of the data points.
+    z : np.ndarray
+            The z coordinates of the data points.
+
+    Returns
+    -------
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+            The non-zero data points in the 3D array.
+    """
+    mask = z > 0
+    return x[mask], y[mask], z[mask]
+
+
+@cli.from_docstring(app, name="srf")
+def animate_srf_slip_times(
+    realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    srf_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
+    output_mp4: Annotated[
+        Path, typer.Argument(writable=True, dir_okay=False, resolve_path=True)
+    ],
+    max_motion: Annotated[float, typer.Option()] = 10.0,
+    padding: Annotated[float, typer.Option()] = 5.0,
+    cmap: Annotated[str, typer.Option()] = "hot",
+    scale: Annotated[str, typer.Option()] = "10m",
+    shading: Annotated[str, typer.Option()] = "gouraud",
+    frame_count: Annotated[int | None, typer.Option()] = None,
+    width: Annotated[float, typer.Option()] = 30.0,
+    height: Annotated[float, typer.Option()] = 30.0,
+    dpi: Annotated[float, typer.Option()] = 150.0,
+    fps: Annotated[float, typer.Option()] = 15.0,
+    title: Annotated[str | None, typer.Option()] = None,
+    zoom: Annotated[float, typer.Option()] = 1,
+    simple_map: Annotated[bool, typer.Option()] = False,
+    map_quality: Annotated[int, typer.Option()] = 4,
+) -> None:
+    """Render SRF slip times as a 2D video.
+
+    Parameters
+    ----------
+    realisation_ffp : Path
+        The input realisation file.
+    srf_ffp : Path
+        The input srf file containing the simulation data.
+    output_mp4 : Path
+        The output file path for the generated animation.
+    max_motion : float, optional
+        The maximum ground motion value for color scaling, by default 10.0.
+    padding : float, optional
+        The padding in km for the map extent, by default 5.0.
+    cmap : str, optional
+        The colormap to use for the animation, by default "hot".
+    scale : str, optional
+        The scale for cartopy features, by default "10m".
+    shading : str, optional
+        The shading method for `plt.pcolormesh`, by default "gouraud".
+    frame_count : int | None, optional
+        The number of frames to display in the animation, by default None (uses all frames).
+    width : float, optional
+        The width of the figure in cm, by default 30.
+    height : float, optional
+        The height of the figure in cm, by default 30.
+    dpi : float, optional
+        The DPI for the figure, by default 150.0.
+    fps : float, optional
+        The frames per second for the animation, by default 15.0.
+    title : str | None, optional
+        The title for the animation, by default None (no title).
+    zoom : float, optional
+        Zoom factor for the map, by default 1.0, on a log-scale. Zoom
+        centres on centre of source geometry.
+    simple_map : bool, optional
+        If True, disable OpenStreetMap background and use a simple map.
+    map_quality : int, optional
+        The quality of the map, by default 4. Has no effect if using a
+        simple map. Lower values have lower quality but render faster.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        print(
+            "You must have ffmpeg installed. See https://ffmpeg.org/download.html.",
+        )
+        raise typer.Exit(code=1)
+
+    if dpi % 2:
+        dpi += 1
+
+    source_config = SourceConfig.read_from_realisation(realisation_ffp)
+    domain_config = DomainParameters.read_from_realisation(realisation_ffp)
+    srf_file = srf.read_srf(srf_ffp)
+
+    nztm_corners = coordinates.wgs_depth_to_nztm(domain_config.domain.corners)[:, ::-1]
+    slip = srf_file.slipt1_array.tocsc()
+    map_extent_nztm = map_extents(nztm_corners, padding)
+
+    if zoom != 1:
+        centre = shapely.centroid(
+            shapely.union_all(
+                [fault.geometry for fault in source_config.source_geometries.values()]
+            )
+        )
+        map_extent_nztm = zoom_extents(
+            map_extent_nztm,
+            (centre.y, centre.x),
+            zoom,
+        )
+
+    frame_count = frame_count or srf_file.nt
+
+    # Create figure and initial setup
+    cm = 1 / 2.54
+    fig = plt.figure(figsize=(width * cm, height * cm))
+    ax = fig.add_subplot(1, 1, 1, projection=NZTM_CRS)
+    ax.set_extent(map_extent_nztm, crs=NZTM_CRS)
+
+    # Add time text
+
+    time_text = ax.text(
+        0.98,
+        0.02,
+        "Time: 0s",
+        transform=ax.transAxes,
+        fontsize=12,
+        color="black",
+        fontweight="bold",
+        ha="right",
+        va="bottom",
+        bbox={"boxstyle": "round", "facecolor": "white", "alpha": 0.8},
+    )
+
+    if simple_map:
+        plot_cartographic_features(ax, scale)
+        plot_towns(ax, map_extent_nztm)
+    else:
+        request = cimgt.OSM(cache=True)
+        request._MAX_THREADS = (
+            1  # Limit to one thread because it is in a multiprocess pool.
+        )
+        ax.add_image(
+            request,
+            10,
+            interpolation="spline36",
+            regrid_shape=map_quality * 1000,
+            zorder=0,
+        )
+
+    ax.add_geometries(
+        [shapely.Polygon(nztm_corners)],
+        facecolor="none",
+        edgecolor="black",
+        linestyle="--",
+        zorder=1,
+        crs=NZTM_CRS,
+    )
+
+    ax.add_geometries(
+        [
+            shapely.transform(fault.geometry, lambda coords: coords[:, ::-1])
+            for fault in sorted(
+                source_config.source_geometries.values(),
+                key=lambda fault: -fault.centroid[-1],
+            )
+        ],
+        facecolor="red",
+        edgecolor="black",
+        zorder=2,
+        crs=NZTM_CRS,
+    )
+
+    if title:
+        fig.suptitle(title, fontsize=16)
+    coords = coordinates.wgs_depth_to_nztm(srf_file.points[["lat", "lon"]].values)[
+        :, ::-1
+    ]
+    x, y = coords[:, 0], coords[:, 1]
+    init_x, init_y, init_z = non_zero_data_points(x, y, slip[:, 0].todense())
+    scat = ax.scatter(
+        init_x,
+        init_y,
+        c=init_z,
+        cmap=cmap,
+        transform=NZTM_CRS,
+        zorder=100,
+    )
+
+    def initial_frame() -> None:
+        time_text.set_text("Time: 0s")
+        return [scat, time_text]
+
+    # Setup the animation function
+    def render_single_frame(
+        frame_index: int,
+    ) -> list:
+        # Create a new figure for this frame
+        slip_index = frame_index * 20
+        # Add all static elements
+        interval_slip_mean = slip[:, slip_index].todense()
+        slip_end = min(slip_index + 20, srf_file.nt)
+        for j in range(slip_index, slip_end):
+            interval_slip_mean += slip[:, j].todense()
+        interval_slip_mean /= slip_end - slip_index
+        # Add the actual data for this frame
+        cur_x, cur_y, z = non_zero_data_points(
+            x,
+            y,
+            interval_slip_mean,
+        )
+        scat.set_offsets(np.c_[cur_x, cur_y])
+        scat.set_array(z)
+        time_text.set_text(f"Time: {slip_index * srf_file.dt:.2f} s")
+        return [scat, time_text]
+
+    # Create the animation
+    anim = FuncAnimation(
+        fig,
+        render_single_frame,
+        init_func=initial_frame,
+        frames=tqdm.trange(frame_count // 20, desc="Rendering frames", unit="frame"),
+        blit=True,
+    )
+
+    # Save the animation
+    writer = FFMpegWriter(fps=fps)
+    anim.save(output_mp4, writer=writer)
+    plt.close(fig)
