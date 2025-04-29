@@ -660,6 +660,7 @@ def animate_srf_slip_times(
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
     map_quality: Annotated[int, typer.Option()] = 4,
+    frame_dt: Annotated[int, typer.Option(min=0)] = 20,
 ) -> None:
     """Render SRF slip times as a 2D video.
 
@@ -701,6 +702,8 @@ def animate_srf_slip_times(
     map_quality : int, optional
         The quality of the map, by default 4. Has no effect if using a
         simple map. Lower values have lower quality but render faster.
+    frame_dt : int, optional
+        The number of timeslices per dt-step, default is 20.
     """
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
@@ -819,10 +822,10 @@ def animate_srf_slip_times(
         frame_index: int,
     ) -> list:  # numpydoc ignore=GL08
         # Create a new figure for this frame
-        slip_index = frame_index * 20
+        slip_index = frame_index * frame_dt
         # Add all static elements
         interval_slip_mean = slip[:, slip_index].todense()
-        slip_end = min(slip_index + 20, srf_file.nt)
+        slip_end = min(slip_index + frame_dt, srf_file.nt)
         for j in range(slip_index, slip_end):
             interval_slip_mean += slip[:, j].todense()
         interval_slip_mean /= slip_end - slip_index
@@ -842,7 +845,9 @@ def animate_srf_slip_times(
         fig,
         render_single_frame,
         init_func=initial_frame,
-        frames=tqdm.trange(frame_count // 20, desc="Rendering frames", unit="frame"),
+        frames=tqdm.trange(
+            frame_count // frame_dt, desc="Rendering frames", unit="frame"
+        ),
         blit=True,
     )
 
