@@ -387,6 +387,9 @@ def render_single_frame(
         plot_towns(ax, map_extent_nztm)
     else:
         request = cimgt.OSM(cache=True)
+        request._MAX_THREADS = (
+            1  # Limit to one thread because it is in a multiprocess pool.
+        )
         ax.add_image(
             request,
             10,
@@ -456,7 +459,12 @@ def render_single_frame(
     )
     cbar.set_label("Ground Motion (cm/s)")
 
-    return [ax]
+    # Save the frame to a file
+    frame_filename = f"frame_{frame_index:04d}.png"
+    plt.savefig(frame_filename, dpi=dpi)
+    plt.close(fig)
+
+    return frame_filename
 
 
 @cli.from_docstring(app, name="xyts")
