@@ -291,7 +291,7 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
     nx : int
         The number of x-points in the output grid.
     ny : int
-        The number of x-points in the output grid.
+        The number of y-points in the output grid.
 
     Returns
     -------
