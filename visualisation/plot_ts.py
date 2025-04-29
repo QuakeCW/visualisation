@@ -286,9 +286,12 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
 
     Parameters
     ----------
-    xyts_file : XYTSFile
-        The xyts file containing gridded data.
-
+    nztm_corners : np.ndarray
+        The corners of the waveform grid.
+    nx : int
+        The number of x-points in the output grid.
+    ny : int
+        The number of x-points in the output grid.
 
     Returns
     -------
