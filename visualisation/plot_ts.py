@@ -19,7 +19,6 @@ matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy as sp
 import shapely
 import tqdm
 import typer
