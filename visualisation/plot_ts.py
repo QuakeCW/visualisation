@@ -808,14 +808,14 @@ def animate_srf_slip_times(
         zorder=100,
     )
 
-    def initial_frame() -> None:
+    def initial_frame() -> None:  # numpydoc ignore=GL08
         time_text.set_text("Time: 0s")
         return [scat, time_text]
 
     # Setup the animation function
     def render_single_frame(
         frame_index: int,
-    ) -> list:
+    ) -> list:  # numpydoc ignore=GL08
         # Create a new figure for this frame
         slip_index = frame_index * 20
         # Add all static elements
