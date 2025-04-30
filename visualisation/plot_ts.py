@@ -329,7 +329,7 @@ def render_single_frame(
     title: str | None,
     width: float,
     height: float,
-    dpi: float,
+    dpi: int,
 ) -> str:
     """Render a single frame of the animation.
 
@@ -367,7 +367,7 @@ def render_single_frame(
         The width of the figure in cm.
     height : float
         The height of the figure in cm.
-    dpi : float
+    dpi : int
         The DPI for the figure.
 
     Returns
@@ -482,8 +482,8 @@ def animate_low_frequency_mpl_nztm(
     frame_count: Annotated[int | None, typer.Option()] = None,
     width: Annotated[float, typer.Option()] = 30.0,
     height: Annotated[float, typer.Option()] = 30.0,
-    dpi: Annotated[float, typer.Option()] = 150.0,
-    fps: Annotated[float, typer.Option()] = 15.0,
+    dpi: Annotated[int, typer.Option()] = 150,
+    fps: Annotated[float, typer.Option()] = 15,
     title: Annotated[str | None, typer.Option()] = None,
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
@@ -515,10 +515,10 @@ def animate_low_frequency_mpl_nztm(
         The width of the figure in cm, by default 30.
     height : float, optional
         The height of the figure in cm, by default 30.
-    dpi : float, optional
+    dpi : int, optional
         The DPI for the figure, by default 150.0.
-    fps : float, optional
-        The frames per second for the animation, by default 15.0.
+    fps : int, optional
+        The frames per second for the animation, by default 15.
     title : str | None, optional
         The title for the animation, by default None (no title).
     zoom : float, optional
@@ -536,9 +536,6 @@ def animate_low_frequency_mpl_nztm(
             "You must have ffmpeg installed. See https://ffmpeg.org/download.html.",
         )
         raise typer.Exit(code=1)
-
-    if dpi % 2:
-        dpi += 1
 
     source_config = SourceConfig.read_from_realisation(realisation_ffp)
     xyts_file = XYTSFile(xyts_ffp)
@@ -661,8 +658,8 @@ def animate_srf_slip_times(
     frame_count: Annotated[int | None, typer.Option()] = None,
     width: Annotated[float, typer.Option()] = 30.0,
     height: Annotated[float, typer.Option()] = 30.0,
-    dpi: Annotated[float, typer.Option()] = 150.0,
-    fps: Annotated[float, typer.Option()] = 15.0,
+    dpi: Annotated[int, typer.Option()] = 150.0,
+    fps: Annotated[int, typer.Option()] = 15,
     title: Annotated[str | None, typer.Option()] = None,
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
@@ -693,9 +690,9 @@ def animate_srf_slip_times(
         The width of the figure in cm, by default 30.
     height : float, optional
         The height of the figure in cm, by default 30.
-    dpi : float, optional
+    dpi : int, optional
         The DPI for the figure, by default 150.0.
-    fps : float, optional
+    fps : int, optional
         The frames per second for the animation, by default 15.0.
     title : str | None, optional
         The title for the animation, by default None (no title).
