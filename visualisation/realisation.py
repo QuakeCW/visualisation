@@ -7,7 +7,7 @@ The functions are designed to be reusable for custom plotting scripts.
 """
 
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 import numpy as np
 import pandas as pd
@@ -33,7 +33,7 @@ def plot_stations(
     fig: pygmt.Figure,
     domain_parameters: DomainParameters,
     stations_path: Path,
-    **kwargs: dict,
+    **kwargs: dict[str, Any],
 ) -> None:
     """Plot stations file on a figure.
 
@@ -79,7 +79,7 @@ def plot_stations(
 
 
 def plot_sources(
-    fig: pygmt.Figure, source_config: SourceConfig, **kwargs: dict
+    fig: pygmt.Figure, source_config: SourceConfig, **kwargs: dict[str, Any]
 ) -> None:
     """Plot the sources on the figure.
 
@@ -111,7 +111,7 @@ def plot_sources(
 def plot_domain(
     fig: pygmt.Figure,
     domain_parameters: DomainParameters,
-    **kwargs: dict,
+    **kwargs: dict[str, Any],
 ) -> None:
     """Plot the domain on a figure.
 
@@ -145,8 +145,8 @@ def plot_rrup_polygon(
     region: utils.Region,
     pgv_target: float,
     rrup_bounding_polygon: shapely.Polygon,
-    rrup_polygon_args: dict | None = None,
-    label_args: dict | None = None,
+    rrup_polygon_args: dict[str, Any] | None = None,
+    label_args: dict[str, Any] | None = None,
 ) -> None:
     """Plot the RRup bounding polygon on a figure.
 
