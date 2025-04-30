@@ -63,7 +63,7 @@ def plot_stations(
     >>> plot_stations(fig, domain, stations_path)
     >>> fig.show()
     """
-    kwargs = kwargs or {"style": "t0.1c", "fill": "red", "pen": "black"}
+    kwargs = {"style": "t0.1c", "fill": "red", "pen": "black", **(kwargs or {})}
     stations = pd.read_csv(
         stations_path, delimiter=r"\s+", comment="#", names=["lon", "lat", "name"]
     )
@@ -102,7 +102,8 @@ def plot_sources(
     >>> plot_sources(fig, source_config)
     >>> source_config.show()
     """
-    kwargs = kwargs or {"pen": "0.3p,black"}
+    kwargs = {"pen": "0.3p,black", **(kwargs or {})}
+
     for source in source_config.source_geometries.values():
         utils.plot_polygon(fig, utils.polygon_nztm_to_pygmt(source.geometry), **kwargs)
 
@@ -121,7 +122,7 @@ def plot_domain(
     domain_parameters : DomainParameters
         The domain to plot.
     **kwargs : dict
-        Additional keyword arguments to pass to the plotting function. If empty, the default is
+        Additional keyword arguments to pass to the plotting function. The defaults are
         - `pen="1p,blue,-"` (polygon border colour)
 
     Examples
@@ -133,7 +134,7 @@ def plot_domain(
     >>> plot_domain(fig, domain)
     >>> fig.show()
     """
-    kwargs = kwargs or {"pen": "1p,blue,-"}
+    kwargs = {"pen": "1p,blue,-", **(kwargs or {})}
     utils.plot_polygon(
         fig, utils.polygon_nztm_to_pygmt(domain_parameters.domain.polygon), **kwargs
     )
@@ -160,10 +161,10 @@ def plot_rrup_polygon(
     rrup_bounding_polygon : shapely.Polygon
         The RRup bounding polygon.
     rrup_polygon_args : dict, optional
-        Style arguments for the rrup polygon. See `pygmt.Figure.plot`. If empty, the default is
+        Style arguments for the rrup polygon. See `pygmt.Figure.plot`. The defaults are
         - `pen="0.3p,black,-"` (polygon border colour)
     label_args : dict, optional
-        Style arguments for the label. See `pygmt.Figure.text`. If empty, the default is
+        Style arguments for the label. See `pygmt.Figure.text`. The defaults are
         - `fill="white"` (label fill colour)
         - `pen="0.3p,black"` (label border colour)
 
@@ -180,12 +181,14 @@ def plot_rrup_polygon(
     >>> plot_rrup_polygon(fig, region, 10.0, rrup_polygon)
     >>> fig.show()
     """
-    rrup_polygon_args = rrup_polygon_args or {
+    rrup_polygon_args = {
         "pen": "0.3p,black,-",
+        **(rrup_polygon_args or {}),
     }
-    label_args = label_args or {
+    label_args = {
         "fill": "white",
         "pen": "0.3p,black",
+        **(label_args or {}),
     }
     utils.plot_polygon(
         fig,
