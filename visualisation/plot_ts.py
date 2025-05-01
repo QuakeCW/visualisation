@@ -483,7 +483,7 @@ def animate_low_frequency_mpl_nztm(
     width: Annotated[float, typer.Option()] = 30.0,
     height: Annotated[float, typer.Option()] = 30.0,
     dpi: Annotated[int, typer.Option()] = 150,
-    fps: Annotated[float, typer.Option()] = 15,
+    fps: Annotated[int, typer.Option()] = 15,
     title: Annotated[str | None, typer.Option()] = None,
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
