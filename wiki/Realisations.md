@@ -167,7 +167,7 @@ This basic command will create a map plot showing:
 2. The planned path the rupture will take through the faults, indicated by arrows.
 
 > [!NOTE]
-> The arrows do indicate the precise location that the rupture will jump between faults. They only indicate the order the faults will rupture in.
+> The arrows do not indicate the precise location that the rupture will jump between faults. They only indicate the order the faults will rupture in.
 
 ![Basic plot showing source geometry and a rupture path](images/alpine_hope_1_rupture_path.png)
 
