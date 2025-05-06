@@ -114,7 +114,7 @@ def plot_rupture_path_to_file(
     title : str, optional
         The title of the plot.
     latitude_pad : float
-        The latitude padding too apply (in degrees).
+        The latitude padding to apply (in degrees).
     longitude_pad : float
         The longitude padding to apply (in degrees).
     width : float
