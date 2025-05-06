@@ -10,7 +10,7 @@ qcore @ git+https://github.com/ucgmsim/qcore.git
 geopandas
 pandas
 shapely
-scipy
+scipy >= 1.15.0
 pooch
 pytest
 pytest-cov
