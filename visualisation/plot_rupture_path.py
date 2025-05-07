@@ -21,7 +21,7 @@ def plot_rupture_path(
 ):
     """Plot a rupture path.
 
-    The rupture is plotted a series of directed arrows between two
+    The rupture is plotted as a series of directed arrows between two
     faults, from the parent fault to a subsequent fault.
 
     Parameters
