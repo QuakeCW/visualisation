@@ -311,11 +311,21 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
     )
     return coords_nztm[::-1, :, :]  # Reverse order to (x, y) for NZTM
 
+def tslice_get(xyts_file: XYTSFile, index: int, downsample: int = 1) -> np.ndarray:
+    if downsample > 1:
+        frame_data = xyts_file.data[index, :, ::downsample, ::downsample]
+    else:
+        frame_data = xyts_file.data[index]  # shape: (3, ny, nx)
+    accum = np.zeros(frame_data.shape[1:], dtype=np.float32)
+    for i in range(3):
+        np.add(accum, frame_data[i] ** 2, out=accum)
+    np.sqrt(accum, out=accum)
+    return accum
 
 def render_single_frame(
     frame_index: int,
     dt: float,
-    ground_motion_magnitude: np.ndarray,
+    xyts_file_path: Path,
     max_motion: float,
     cmap: str,
     source_config: SourceConfig,
@@ -375,6 +385,7 @@ def render_single_frame(
     str
         The filename of the saved frame.
     """
+    xyts_file = XYTSFile(xyts_file_path)
     # Create a new figure for this frame
     cm = 1 / 2.54
     fig = plt.figure(figsize=(width * cm, height * cm))
@@ -422,9 +433,10 @@ def render_single_frame(
     )
 
     # Add the actual data for this frame
-    current_data = ground_motion_magnitude[frame_index, :, :]
+
+    current_data = tslice_get(xyts_file, frame_index)
     pcm = ax.pcolormesh(
-        xr,
+        xr[0],
         yr,
         apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
         cmap=cmap,
@@ -480,6 +492,7 @@ def animate_low_frequency_mpl_nztm(
     scale: Annotated[str, typer.Option()] = "10m",
     shading: Annotated[str, typer.Option()] = "gouraud",
     frame_count: Annotated[int | None, typer.Option()] = None,
+    frame_start: Annotated[int, typer.Option()] = 0,
     width: Annotated[float, typer.Option()] = 30.0,
     height: Annotated[float, typer.Option()] = 30.0,
     dpi: Annotated[int, typer.Option()] = 150,
@@ -540,8 +553,6 @@ def animate_low_frequency_mpl_nztm(
     source_config = SourceConfig.read_from_realisation(realisation_ffp)
     xyts_file = XYTSFile(xyts_ffp)
 
-    ground_motion_magnitude = np.linalg.norm(xyts_file.data, axis=1)
-
     nztm_corners = xyts_nztm_corners(xyts_file)
     map_extent_nztm = map_extents(nztm_corners, padding)
 
@@ -564,7 +575,7 @@ def animate_low_frequency_mpl_nztm(
         render_frame = functools.partial(
             render_single_frame,
             dt=xyts_file.dt,
-            ground_motion_magnitude=ground_motion_magnitude,
+            xyts_file_path = xyts_ffp.resolve(),
             max_motion=max_motion,
             cmap=cmap,
             source_config=source_config,
@@ -586,11 +597,11 @@ def animate_low_frequency_mpl_nztm(
 
         render_frame(0)
 
-        with mp.Pool() as pool:
+        with mp.Pool(4) as pool:
             # Render all frames in parallel
             _ = list(
                 tqdm.tqdm(
-                    pool.imap(render_frame, range(1, frame_count)),
+                    pool.imap(render_frame, range(frame_start, frame_start + frame_count)),
                     total=frame_count,
                     unit="frame",
                     desc="Rendering frames",
