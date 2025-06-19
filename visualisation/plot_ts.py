@@ -340,6 +340,7 @@ def render_single_frame(
     width: float,
     height: float,
     dpi: int,
+    downsample
 ) -> str:
     """Render a single frame of the animation.
 
@@ -436,9 +437,9 @@ def render_single_frame(
 
     current_data = tslice_get(xyts_file, frame_index)
     pcm = ax.pcolormesh(
-        xr[0],
-        yr,
-        apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
+        xr[0, ::downsample],
+        yr[::downsample, ::downsample],
+        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion, cmap=cmap),
         cmap=cmap,
         vmin=0,
         vmax=max_motion,
@@ -501,6 +502,7 @@ def animate_low_frequency_mpl_nztm(
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
     map_quality: Annotated[int, typer.Option()] = 4,
+    downsample: int = 1
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
@@ -590,6 +592,7 @@ def animate_low_frequency_mpl_nztm(
             width=width,
             height=height,
             dpi=dpi,
+            downsample=downsample
         )
 
         # warm the OSM cache to speed up rendering by rendering the first frame
