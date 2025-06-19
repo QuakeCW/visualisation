@@ -597,7 +597,7 @@ def animate_low_frequency_mpl_nztm(
 
         render_frame(0)
 
-        with mp.Pool(4) as pool:
+        with mp.Pool() as pool:
             # Render all frames in parallel
             _ = list(
                 tqdm.tqdm(
