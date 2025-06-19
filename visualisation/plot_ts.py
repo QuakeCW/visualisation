@@ -439,14 +439,10 @@ def render_single_frame(
     pcm = ax.pcolormesh(
         yr[::downsample, ::downsample],
         xr[::downsample, ::downsample],
-        current_data[::downsample, ::downsample],
-        cmap=cmap,
-        vmin=0,
-        vmax=max_motion,
+        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion),
         shading="gouraud",
         zorder=3,
         transform=NZTM_CRS,
-
     )
 
     # Add time text
