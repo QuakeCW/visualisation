@@ -437,15 +437,16 @@ def render_single_frame(
 
     current_data = tslice_get(xyts_file, frame_index)
     pcm = ax.pcolormesh(
-        xr[0, ::downsample],
         yr[::downsample, ::downsample],
-        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion, cmap=cmap),
+        xr[::downsample, ::downsample],
+        current_data[::downsample, ::downsample],
         cmap=cmap,
         vmin=0,
         vmax=max_motion,
         shading="gouraud",
         zorder=3,
-        rasterized=True,
+        transform=NZTM_CRS,
+
     )
 
     # Add time text
