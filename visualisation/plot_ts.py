@@ -312,15 +312,28 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
     return coords_nztm[::-1, :, :]  # Reverse order to (x, y) for NZTM
 
 def tslice_get(xyts_file: XYTSFile, index: int, downsample: int = 1) -> np.ndarray:
+    """Retreive a single timeslice from an xyts file with downsampling
+
+    Parameters
+    ----------
+    xyts_file : XYTSFile
+        The xyts file to retreive from.
+    index : int
+        The timeslice index to read from.
+    downsample : int
+        If greater than 1, downsample the array in strides of `downsample` in
+        the x and y direction.
+
+    Returns
+    -------
+    array of float32
+        An array of shape (ny, nx) containing the downsampled frame data for `index`.
+    """
     if downsample > 1:
         frame_data = xyts_file.data[index, :, ::downsample, ::downsample]
     else:
         frame_data = xyts_file.data[index]  # shape: (3, ny, nx)
-    accum = np.zeros(frame_data.shape[1:], dtype=np.float32)
-    for i in range(3):
-        np.add(accum, frame_data[i] ** 2, out=accum)
-    np.sqrt(accum, out=accum)
-    return accum
+    return np.linalg.norm(frame_data, axis=0)
 
 def render_single_frame(
     frame_index: int,
