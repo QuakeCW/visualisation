@@ -312,12 +312,12 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
     return coords_nztm[::-1, :, :]  # Reverse order to (x, y) for NZTM
 
 def tslice_get(xyts_file: XYTSFile, index: int, downsample: int = 1) -> np.ndarray:
-    """Retreive a single timeslice from an xyts file with downsampling
+    """Retrieve a single timeslice from an xyts file with downsampling
 
     Parameters
     ----------
     xyts_file : XYTSFile
-        The xyts file to retreive from.
+        The xyts file to retrieve from.
     index : int
         The timeslice index to read from.
     downsample : int
