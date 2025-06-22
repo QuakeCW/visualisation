@@ -364,12 +364,6 @@ def render_single_frame(
         The index of the frame to render.
     dt : float
         The time step of the simulation.
-    ground_motion_magnitude : np.ndarray
-        The ground motion magnitude data.
-    max_motion : float
-        The maximum ground motion value for color scaling.
-    cmap : str
-        The colormap to use for the animation.
     source_config : SourceConfig
         The source configuration object.
     nztm_corners : np.ndarray
@@ -380,6 +374,12 @@ def render_single_frame(
         The x coordinates of the gridpoints in NZTM coordinates.
     yr : np.ndarray
         The y coordinates of the gridpoints in NZTM coordinates.
+    max_motion : float
+        The maximum ground motion value for color scaling.
+    cmap : str
+        The colormap to use for the animation.
+    shading : str
+        The shading to apply to the colourmap.
     simple_map : bool
         If True, disable OpenStreetMap background and use a simple map.
     scale : str
@@ -394,6 +394,10 @@ def render_single_frame(
         The height of the figure in cm.
     dpi : int
         The DPI for the figure.
+    downsample : int, optional
+        If greater than 1, downsample the timeslice array in strides of
+        `downsample` in the x and y direction. Provides a speedup for large
+        domains.
 
     Returns
     -------
@@ -493,7 +497,7 @@ def render_single_frame(
 
 
 @cli.from_docstring(app, name="xyts")
-def animate_low_frequency_mpl_nztm(
+def animate_low_frequency(
     realisation_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     xyts_ffp: Annotated[Path, typer.Argument(exists=True, dir_okay=False)],
     output_mp4: Annotated[
@@ -556,6 +560,10 @@ def animate_low_frequency_mpl_nztm(
     map_quality : int, optional
         The quality of the map, by default 4. Has no effect if using a
         simple map. Lower values have lower quality but render faster.
+    downsample : int, optional
+        If greater than 1, downsample the timeslice array in strides of
+        `downsample` in the x and y direction. Provides a speedup for large
+        domains.
     """
     ffmpeg = shutil.which("ffmpeg")
     if not ffmpeg:
