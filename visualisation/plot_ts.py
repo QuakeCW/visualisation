@@ -453,11 +453,11 @@ def render_single_frame(
 
     # Add the actual data for this frame
 
-    current_data = tslice_get(xyts_file, frame_index)
+    current_data = tslice_get(xyts_file, frame_index, downsample=downsample)
     pcm = ax.pcolormesh(
         yr[::downsample, ::downsample],
         xr[::downsample, ::downsample],
-        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion, cmap=cmap),
+        apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
         cmap=cmap, vmin=0, vmax=max_motion,
         shading=shading,
         zorder=3,
