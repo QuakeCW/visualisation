@@ -518,7 +518,7 @@ def animate_low_frequency(
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
     map_quality: Annotated[int, typer.Option()] = 4,
-    downsample: int = 1
+    downsample: Annotated[int, typer.Option()] = 1
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
