@@ -339,13 +339,14 @@ def render_single_frame(
     frame_index: int,
     dt: float,
     xyts_file_path: Path,
-    max_motion: float,
-    cmap: str,
     source_config: SourceConfig,
     nztm_corners: np.ndarray,
     map_extent_nztm: tuple[float, float, float, float],
     xr: np.ndarray,
     yr: np.ndarray,
+    max_motion: float,
+    cmap: str,
+    shading: str,
     simple_map: bool,
     scale: str,
     map_quality: int,
@@ -353,7 +354,7 @@ def render_single_frame(
     width: float,
     height: float,
     dpi: int,
-    downsample
+    downsample: int
 ) -> str:
     """Render a single frame of the animation.
 
@@ -452,8 +453,9 @@ def render_single_frame(
     pcm = ax.pcolormesh(
         yr[::downsample, ::downsample],
         xr[::downsample, ::downsample],
-        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion),
-        shading="gouraud",
+        apply_cmap_with_alpha(current_data[::downsample, ::downsample], 0, max_motion, cmap=cmap),
+        cmap=cmap, vmin=0, vmax=max_motion,
+        shading=shading,
         zorder=3,
         transform=NZTM_CRS,
     )
@@ -478,7 +480,7 @@ def render_single_frame(
 
     plt.tight_layout(rect=[0.05, 0.05, 0.95, 0.95])
     cbar = fig.colorbar(
-        pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8
+        pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8,
     )
     cbar.set_label("Ground Motion (cm/s)")
 
@@ -587,6 +589,7 @@ def animate_low_frequency_mpl_nztm(
         render_frame = functools.partial(
             render_single_frame,
             dt=xyts_file.dt,
+            shading=shading,
             xyts_file_path = xyts_ffp.resolve(),
             max_motion=max_motion,
             cmap=cmap,
