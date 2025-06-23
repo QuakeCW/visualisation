@@ -2,6 +2,7 @@
 
 import functools
 import multiprocessing as mp
+import io
 import os
 import shutil
 import subprocess
@@ -19,6 +20,7 @@ matplotlib.use("Agg")
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
+import ffmpeg
 import shapely
 import tqdm
 import typer
@@ -355,7 +357,7 @@ def render_single_frame(
     height: float,
     dpi: int,
     downsample: int
-) -> str:
+) -> bytes:
     """Render a single frame of the animation.
 
     Parameters
@@ -401,8 +403,8 @@ def render_single_frame(
 
     Returns
     -------
-    str
-        The filename of the saved frame.
+    bytes
+        The raw frame output for the frame index
     """
     xyts_file = XYTSFile(xyts_file_path)
     # Create a new figure for this frame
@@ -489,12 +491,9 @@ def render_single_frame(
     cbar.set_label("Ground Motion (cm/s)")
 
     # Save the frame to a file
-    frame_filename = f"frame_{frame_index:04d}.png"
-    plt.savefig(frame_filename, dpi=dpi)
-    plt.close(fig)
-
-    return frame_filename
-
+    with io.BytesIO() as io_buf:
+        fig.savefig(io_buf, format='raw', dpi=dpi)
+        return io_buf.getvalue()
 
 @cli.from_docstring(app, name="xyts")
 def animate_low_frequency(
@@ -565,8 +564,8 @@ def animate_low_frequency(
         `downsample` in the x and y direction. Provides a speedup for large
         domains.
     """
-    ffmpeg = shutil.which("ffmpeg")
-    if not ffmpeg:
+    have_ffmpeg = shutil.which("ffmpeg")
+    if not have_ffmpeg:
         print(
             "You must have ffmpeg installed. See https://ffmpeg.org/download.html.",
         )
@@ -593,67 +592,64 @@ def animate_low_frequency(
     frame_count = frame_count or xyts_file.nt
     xr, yr = waveform_coordinates(nztm_corners, xyts_file.nx, xyts_file.ny)
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        render_frame = functools.partial(
-            render_single_frame,
-            dt=xyts_file.dt,
-            shading=shading,
-            xyts_file_path = xyts_ffp.resolve(),
-            max_motion=max_motion,
-            cmap=cmap,
-            source_config=source_config,
-            nztm_corners=nztm_corners,
-            map_extent_nztm=map_extent_nztm,
-            xr=xr,
-            yr=yr,
-            simple_map=simple_map,
-            scale=scale,
-            map_quality=map_quality,
-            title=title,
-            width=width,
-            height=height,
-            dpi=dpi,
-            downsample=downsample
-        )
+    render_frame = functools.partial(
+        render_single_frame,
+        dt=xyts_file.dt,
+        shading=shading,
+        xyts_file_path = xyts_ffp.resolve(),
+        max_motion=max_motion,
+        cmap=cmap,
+        source_config=source_config,
+        nztm_corners=nztm_corners,
+        map_extent_nztm=map_extent_nztm,
+        xr=xr,
+        yr=yr,
+        simple_map=simple_map,
+        scale=scale,
+        map_quality=map_quality,
+        title=title,
+        width=width,
+        height=height,
+        dpi=dpi,
+        downsample=downsample
+    )
 
-        # warm the OSM cache to speed up rendering by rendering the first frame
-        os.chdir(temp_dir)
+    # warm the OSM cache to speed up rendering by rendering the first frame
 
-        render_frame(0)
+    frames = [render_frame(0)]
 
-        with mp.Pool() as pool:
-            # Render all frames in parallel
-            _ = list(
-                tqdm.tqdm(
-                    pool.imap(render_frame, range(frame_start, frame_start + frame_count)),
-                    total=frame_count,
-                    unit="frame",
-                    desc="Rendering frames",
-                    initial=1,
-                )
+    with mp.Pool() as pool:
+        # Render all frames in parallel
+        frames.extend(
+            tqdm.tqdm(
+                pool.imap(render_frame, range(frame_start, frame_start + frame_count)),
+                total=frame_count,
+                unit="frame",
+                desc="Rendering frames",
+                initial=1,
             )
+        )
+    cm = 1/2.54
+    width_px = int(width * cm * dpi)
+    height_px = int(height * cm * dpi)
+    # Use ffmpeg to combine frames into video
+    process = (
+        ffmpeg
+        .input('pipe:0', format='rawvideo', pix_fmt='rgba', s=f'{width_px}x{height_px}')
+        .output(str(output_mp4), pix_fmt='yuv420p', r=fps, vcodec='libx264', crf=23, vf='pad=ceil(iw/2)*2:ceil(ih/2)*2')
+        .overwrite_output()
+        .run_async(pipe_stdin=True)
+    )
 
-        # Use ffmpeg to combine frames into video
+    # Write the raw video data to FFmpeg's stdin
+    for frame in frames:
+        process.stdin.write(frame)
 
-        ffmpeg_cmd = [
-            ffmpeg,
-            "-y",  # Overwrite output file if it exists
-            "-framerate",
-            str(fps),
-            "-i",
-            "frame_%04d.png",
-            "-c:v",
-            "libx264",
-            "-vf",
-            "pad=ceil(iw/2)*2:ceil(ih/2)*2",
-            "-pix_fmt",
-            "yuv420p",
-            "-crf",
-            "23",  # Quality setting (lower is better)
-            str(output_mp4),
-        ]
+    process.stdin.close()
 
-        subprocess.run(ffmpeg_cmd, check=True)
+    # Wait for FFmpeg to finish
+    process.wait()
+
 
 
 def non_zero_data_points(
