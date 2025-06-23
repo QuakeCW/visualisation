@@ -1,12 +1,9 @@
 """Create simulation video of surface ground motion levels."""
 
 import functools
-import multiprocessing as mp
 import io
-import os
+import multiprocessing as mp
 import shutil
-import subprocess
-import tempfile
 from pathlib import Path
 from typing import Annotated
 
@@ -17,10 +14,10 @@ import matplotlib
 
 matplotlib.use("Agg")
 
+import ffmpeg
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
-import ffmpeg
 import shapely
 import tqdm
 import typer
@@ -313,6 +310,7 @@ def waveform_coordinates(nztm_corners: np.ndarray, nx: int, ny: int) -> np.ndarr
     )
     return coords_nztm[::-1, :, :]  # Reverse order to (x, y) for NZTM
 
+
 def tslice_get(xyts_file: XYTSFile, index: int, downsample: int = 1) -> np.ndarray:
     """Retrieve a single timeslice from an xyts file with downsampling
 
@@ -337,6 +335,7 @@ def tslice_get(xyts_file: XYTSFile, index: int, downsample: int = 1) -> np.ndarr
         frame_data = xyts_file.data[index]  # shape: (3, ny, nx)
     return np.linalg.norm(frame_data, axis=0)
 
+
 def render_single_frame(
     frame_index: int,
     dt: float,
@@ -356,7 +355,7 @@ def render_single_frame(
     width: float,
     height: float,
     dpi: int,
-    downsample: int
+    downsample: int,
 ) -> bytes:
     """Render a single frame of the animation.
 
@@ -462,7 +461,9 @@ def render_single_frame(
         yr[::downsample, ::downsample],
         xr[::downsample, ::downsample],
         apply_cmap_with_alpha(current_data, 0, max_motion, cmap=cmap),
-        cmap=cmap, vmin=0, vmax=max_motion,
+        cmap=cmap,
+        vmin=0,
+        vmax=max_motion,
         shading=shading,
         zorder=3,
         transform=NZTM_CRS,
@@ -488,13 +489,18 @@ def render_single_frame(
 
     plt.tight_layout(rect=[0.05, 0.05, 0.95, 0.95])
     cbar = fig.colorbar(
-        pcm, ax=ax, orientation="vertical", pad=0.02, aspect=30, shrink=0.8,
+        pcm,
+        ax=ax,
+        orientation="vertical",
+        pad=0.02,
+        aspect=30,
+        shrink=0.8,
     )
     cbar.set_label("Ground Motion (cm/s)")
 
     # Save the frame to a file
     with io.BytesIO() as io_buf:
-        fig.savefig(io_buf, format='raw', dpi=dpi)
+        fig.savefig(io_buf, format="raw", dpi=dpi)
         plt.close(fig)
         return io_buf.getvalue()
 
@@ -521,7 +527,7 @@ def animate_low_frequency(
     zoom: Annotated[float, typer.Option()] = 1,
     simple_map: Annotated[bool, typer.Option()] = False,
     map_quality: Annotated[int, typer.Option()] = 4,
-    downsample: Annotated[int, typer.Option()] = 1
+    downsample: Annotated[int, typer.Option()] = 1,
 ) -> None:
     """Render low-frequency output as a 2D video of ground motions.
 
@@ -602,7 +608,7 @@ def animate_low_frequency(
         render_single_frame,
         dt=xyts_file.dt,
         shading=shading,
-        xyts_file_path = xyts_ffp.resolve(),
+        xyts_file_path=xyts_ffp.resolve(),
         max_motion=max_motion,
         cmap=cmap,
         source_config=source_config,
@@ -617,7 +623,7 @@ def animate_low_frequency(
         width=width,
         height=height,
         dpi=dpi,
-        downsample=downsample
+        downsample=downsample,
     )
 
     # warm the OSM cache to speed up rendering by rendering the first frame
@@ -635,14 +641,22 @@ def animate_low_frequency(
                 initial=1,
             )
         )
-    cm = 1/2.54
+    cm = 1 / 2.54
     width_px = int(width * cm * dpi)
     height_px = int(height * cm * dpi)
     # Use ffmpeg to combine frames into video
     process = (
-        ffmpeg
-        .input('pipe:0', format='rawvideo', pix_fmt='rgba', s=f'{width_px}x{height_px}')
-        .output(str(output_mp4), pix_fmt='yuv420p', r=fps, vcodec='libx264', crf=23, vf='pad=ceil(iw/2)*2:ceil(ih/2)*2')
+        ffmpeg.input(
+            "pipe:0", format="rawvideo", pix_fmt="rgba", s=f"{width_px}x{height_px}"
+        )
+        .output(
+            str(output_mp4),
+            pix_fmt="yuv420p",
+            r=fps,
+            vcodec="libx264",
+            crf=23,
+            vf="pad=ceil(iw/2)*2:ceil(ih/2)*2",
+        )
         .overwrite_output()
         .run_async(pipe_stdin=True)
     )
@@ -655,7 +669,6 @@ def animate_low_frequency(
 
     # Wait for FFmpeg to finish
     process.wait()
-
 
 
 def non_zero_data_points(
