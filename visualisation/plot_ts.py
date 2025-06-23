@@ -493,7 +493,7 @@ def render_single_frame(
     # Save the frame to a file
     with io.BytesIO() as io_buf:
         fig.savefig(io_buf, format='raw', dpi=dpi)
-        fig.close()
+        plt.close(fig)
         return io_buf.getvalue()
 
 
