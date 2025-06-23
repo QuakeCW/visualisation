@@ -366,6 +366,8 @@ def render_single_frame(
         The index of the frame to render.
     dt : float
         The time step of the simulation.
+    xyts_file_path : Path
+        The path to the XYTS file.
     source_config : SourceConfig
         The source configuration object.
     nztm_corners : np.ndarray
@@ -543,6 +545,8 @@ def animate_low_frequency(
         The shading method for `plt.pcolormesh`, by default "gouraud".
     frame_count : int | None, optional
         The number of frames to display in the animation, by default None (uses all frames).
+    frame_start : int, optional
+        The frame to start the animation on. Defaults to zero.
     width : float, optional
         The width of the figure in cm, by default 30.
     height : float, optional
