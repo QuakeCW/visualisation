@@ -4,9 +4,7 @@ from pathlib import Path
 import diffimg
 import pytest
 
-from visualisation import plot_1d_velocity_model, realisation
-
-####### Ancestor
+from visualisation import plot_1d_velocity_model, plot_rupture_path, realisation
 from visualisation.sources import (
     plot_mw_contributions,
     plot_rakes,
@@ -21,9 +19,8 @@ from visualisation.sources import (
 
 TEST_DATA_DIR = Path(__file__).parent
 PLOT_IMAGE_DIRECTORY = Path("wiki/images")
+STATIONS_FFP = TEST_DATA_DIR / "realisation" / "stations.ll"
 DEFAULT_IMAGE_DIFF_TOLERANCE = 0.05
-
-STATIONS_FFP = Path("tests") / "realisation" / "stations.ll"
 
 
 @pytest.fixture(scope="module")
@@ -76,6 +73,12 @@ def velocity_model_plot_file() -> Path:
 def output_image_path(tmp_path: Path) -> Path:
     """Provides a unique temporary path for generated images in each test."""
     return tmp_path / "output.png"
+
+
+@pytest.fixture(scope="module")
+def realisation_base_file() -> Path:
+    """Path to the realisation JSON file."""
+    return TEST_DATA_DIR / "realisation" / "realisation.json"
 
 
 def assert_images_match(
@@ -297,7 +300,7 @@ def test_plot_velocity_model(
         ),
     ],
 )
-def test_realisation_plotting(
+def test_realisation_plot(
     plot_image_dir: Path,
     output_image_path: Path,
     domain_realisation_ffp: Path,
@@ -346,4 +349,16 @@ def test_plot_stoch(
         **plot_kwargs,
     )
 
+    assert_images_match(output_image_path, expected_image_file)
+
+
+def test_plot_rupture_path(
+    velocity_model_plot_file: Path,
+    output_image_path: Path,
+    plot_image_dir: Path,
+):
+    expected_image_file = plot_image_dir / "alpine_hope_1_path.png"
+    plot_rupture_path.plot_rupture_path_to_file(
+        velocity_model_plot_file, output_image_path
+    )
     assert_images_match(output_image_path, expected_image_file)
