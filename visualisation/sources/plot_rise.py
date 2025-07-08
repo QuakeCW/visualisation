@@ -53,12 +53,12 @@ def plot_rise(
     fig = plotting.gen_region_fig(
         title, projection=f"M{width}c", region=region, map_data=None
     )
-
+    grid_scale = plotting.grid_scale_for_region(region)
     for i, segment_points in enumerate(srf_data.segments):
         cur_grid = plotting.create_grid(
             segment_points,
             "trise",
-            grid_spacing="5e/5e",
+            grid_spacing=f"{grid_scale}e/{grid_scale}e",
             region=(
                 segment_points["lon"].min(),
                 segment_points["lon"].max(),
@@ -82,7 +82,7 @@ def plot_rise(
         time_grid = plotting.create_grid(
             segment_points,
             "tinit",
-            grid_spacing="5e/5e",
+            grid_spacing=f"{grid_scale}e/{grid_scale}e",
             region=(
                 segment_points["lon"].min(),
                 segment_points["lon"].max(),
