@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Plot SRF distributions."""
+
 from pathlib import Path
 from typing import Annotated, Optional
 
@@ -46,7 +47,7 @@ def plot_srf_distribution(
     ax.set_xlabel("Slip (cm)")
     ax.set_title(
         title
-        or f'Slip PDF for {srf_ffp.stem} ({utils.format_description(srf_data.points["slip"], compact=True)})'
+        or f"Slip PDF for {srf_ffp.stem} ({utils.format_description(srf_data.points['slip'], compact=True)})"
     )
 
     plt.savefig(plot_png, dpi=dpi)

@@ -8,6 +8,7 @@ import typer
 from pygmt_helper import plotting
 from qcore import cli
 from source_modelling import srf
+from visualisation import utils
 
 app = typer.Typer()
 
@@ -53,7 +54,7 @@ def plot_rise(
     fig = plotting.gen_region_fig(
         title, projection=f"M{width}c", region=region, map_data=None
     )
-    grid_scale = plotting.grid_scale_for_region(region)
+    grid_scale = utils.grid_scale_for_region(region)
     for i, segment_points in enumerate(srf_data.segments):
         cur_grid = plotting.create_grid(
             segment_points,
