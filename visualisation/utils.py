@@ -313,6 +313,6 @@ def grid_scale_for_region(region: tuple[float, float, float, float]) -> float:
     """
     min_lon, max_lon, min_lat, max_lat = region
     lat_km = (max_lat - min_lat) * 111
-    lon_km = 111 * np.cos(np.radians((min_lat + max_lat) / 2))
+    lon_km = (max_lon - min_lon) * 111 * np.cos(np.radians((min_lat + max_lat) / 2))
     maximum_extent = max(lat_km, lon_km)
     return int(round(max(5, 2.5 * maximum_extent)))
