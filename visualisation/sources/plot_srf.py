@@ -119,7 +119,7 @@ def show_slip(
     )
     dx = srf_data.header.iloc[0]["len"] / srf_data.header.iloc[0]["nstk"]
     subtitle = f"Slip: {slip_stats}, dx = {dx:.2f} km, {len(srf_data.header)} planes"
-    grid_scale = utils.grid_scale_for_region(region)
+    grid_scale = min(utils.grid_scale_for_region(region), dx * 1000)
     for (_, segment), segment_points in zip(
         srf_data.header.iterrows(), srf_data.segments
     ):

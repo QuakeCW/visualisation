@@ -54,7 +54,8 @@ def plot_rise(
     fig = plotting.gen_region_fig(
         title, projection=f"M{width}c", region=region, map_data=None
     )
-    grid_scale = utils.grid_scale_for_region(region)
+    dx = srf_data.header.iloc[0]["len"] / srf_data.header.iloc[0]["nstk"]
+    grid_scale = min(utils.grid_scale_for_region(region), dx * 1000)
     for i, segment_points in enumerate(srf_data.segments):
         cur_grid = plotting.create_grid(
             segment_points,
