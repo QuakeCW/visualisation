@@ -294,7 +294,7 @@ def bounding_region_for(
     )
 
 
-def grid_scale_for_region(region: tuple[float, float, float, float]) -> float:
+def grid_scale_for_region(region: tuple[float, float, float, float]) -> int:
     """Compute a suitable grid scale for a pygmt region.
 
     Parameters
