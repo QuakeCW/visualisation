@@ -292,3 +292,27 @@ def bounding_region_for(
         min_latitude - latitude_pad,
         max_latitude + latitude_pad,
     )
+
+
+def grid_scale_for_region(region: tuple[float, float, float, float]) -> int:
+    """Compute a suitable grid scale for a pygmt region.
+
+    Parameters
+    ----------
+    region : tuple[float, float, float, float]
+        The pygmt region you will plot a grid in.
+
+    Returns
+    -------
+    int
+        A value (in metres) represent for `plotting.create_grid` to
+        use when plotting the lat-lon grid. Scale is based on the
+        maximum extent in the lat or lon direction for the figure in
+        kilometres. Works out that 10km = 25m, 100km = 250m, with a
+        minimum resolution of 5m.
+    """
+    min_lon, max_lon, min_lat, max_lat = region
+    lat_km = (max_lat - min_lat) * 111
+    lon_km = (max_lon - min_lon) * 111 * np.cos(np.radians((min_lat + max_lat) / 2))
+    maximum_extent = max(lat_km, lon_km)
+    return int(round(max(5, 2.5 * maximum_extent)))

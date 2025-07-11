@@ -90,12 +90,12 @@ def assert_images_match(
     Compares two images using diffimg and asserts the difference is within tolerance.
     Provides informative assertion messages.
     """
-    assert (
-        generated_path.exists()
-    ), f"Generated image file does not exist: {generated_path}"
-    assert (
-        expected_path.exists()
-    ), f"Expected image file does not exist: {expected_path}"
+    assert generated_path.exists(), (
+        f"Generated image file does not exist: {generated_path}"
+    )
+    assert expected_path.exists(), (
+        f"Expected image file does not exist: {expected_path}"
+    )
 
     diff_ratio = diffimg.diff(expected_path, generated_path)
 

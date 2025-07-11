@@ -8,6 +8,7 @@ import typer
 from pygmt_helper import plotting
 from qcore import cli
 from source_modelling import srf
+from visualisation import utils
 
 app = typer.Typer()
 
@@ -53,12 +54,13 @@ def plot_rise(
     fig = plotting.gen_region_fig(
         title, projection=f"M{width}c", region=region, map_data=None
     )
-
+    dx = srf_data.header.iloc[0]["len"] / srf_data.header.iloc[0]["nstk"]
+    grid_scale = min(utils.grid_scale_for_region(region), dx * 1000)
     for i, segment_points in enumerate(srf_data.segments):
         cur_grid = plotting.create_grid(
             segment_points,
             "trise",
-            grid_spacing="5e/5e",
+            grid_spacing=f"{grid_scale}e/{grid_scale}e",
             region=(
                 segment_points["lon"].min(),
                 segment_points["lon"].max(),
@@ -82,7 +84,7 @@ def plot_rise(
         time_grid = plotting.create_grid(
             segment_points,
             "tinit",
-            grid_spacing="5e/5e",
+            grid_spacing=f"{grid_scale}e/{grid_scale}e",
             region=(
                 segment_points["lon"].min(),
                 segment_points["lon"].max(),

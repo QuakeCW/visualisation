@@ -82,7 +82,7 @@ def plot_stoch(
             ax.text(
                 k * dx + dx / 2,
                 (j * dy + dy / 2),
-                f"{int(slip[j,  k])}",
+                f"{int(slip[j, k])}",
                 ha="center",
                 va="center",
                 color=colour,
