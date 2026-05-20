@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home01/x3336a02/.local/quakecw_venv/bin/python3
 """
 Compare spectral acceleration with vibration period.
 """
@@ -18,9 +18,9 @@ from qcore.nputil import argsearch
 from visualization.util import intersection
 
 NOT_FOUND = np.ma.masked
-np_endswith = np.core.defchararray.endswith
-np_startswith = np.core.defchararray.startswith
-np_lstrip = np.core.defchararray.lstrip
+np_endswith = np.char.endswith
+np_startswith = np.char.startswith
+np_lstrip = np.char.lstrip
 
 
 def load_args():
@@ -67,13 +67,11 @@ if __name__ == "__main__":
     for imcsv in args.imcsv:
         ims.append(load_im_file_pd(imcsv[0], all_ims=True, comp=args.comp))
         im_names = ims[-1].columns.values.astype(str)
+        names_list = list(im_names)
         psas.append(
-            im_names[
-                np_startswith(im_names, "pSA_")
-                & np.invert(np_endswith(im_names, "_sigma"))
-            ]
+            [name for name in names_list if name.startswith("pSA_") and not name.endswith("_sigma")]
         )
-
+       
     # only common pSAs
     psa_names = intersection(psas)
     psa_vals = np_lstrip(psa_names, chars="pSA_").astype(np.float32)
@@ -110,6 +108,7 @@ if __name__ == "__main__":
         plt.title(args.run_name)
         # plt.xlim([x_min, x_min * 10e4])
         plt.xlim([psa_vals[0], psa_vals[-1]])
+
         plt.ylim([max(0.001, y_min), min(5, y_max)])
         # plt.ylim([0.001, 5])
         plt.savefig(

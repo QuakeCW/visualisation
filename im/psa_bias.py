@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/home01/x3336a02/.local/quakecw_venv/bin/python3
 """
 Plot pSA residual with vibration period.
 """
@@ -17,9 +17,9 @@ from qcore.constants import Components
 from qcore.formats import load_im_file
 from qcore.nputil import argsearch
 
-np_startswith = np.core.defchararray.startswith
-np_endswith = np.core.defchararray.endswith
-np_lstrip = np.core.defchararray.lstrip
+np_startswith = np.char.startswith
+np_endswith = np.char.endswith
+np_lstrip = np.char.lstrip
 
 # default colours for each imcsv ratio
 FACE_EDGE_COLOURS = [
@@ -158,8 +158,8 @@ if __name__ == "__main__":
     # plot formatting
     plt.gca().set_xscale("log")
     plt.minorticks_on()
-    plt.grid(b=True, axis="y", which="major")
-    plt.grid(b=True, axis="x", which="minor")
+    plt.grid(visible=True, axis="y", which="major")
+    plt.grid(visible=True, axis="x", which="minor")
     fig.set_tight_layout(True)
     plt.legend(loc="best")
     plt.ylabel(f"pSA residual\nln({name})\n-ln(GMM)", fontsize=14)
