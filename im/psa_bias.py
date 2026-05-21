@@ -1,4 +1,4 @@
-#!/home01/x3336a02/.local/quakecw_venv/bin/python3
+#!/usr/bin/env python
 """
 Plot pSA residual with vibration period.
 """
@@ -121,9 +121,15 @@ def calc_ratio(arg_im1, arg_im2):
 if __name__ == "__main__":
     args = load_args()
 
+    if len(args.imcsv) < 2:
+        print("Need at least 2 IM csvs for bias comparison (Sim and Obs). Skipping.")
+        sys.exit(0)
+
     # plot
     fig = plt.figure(figsize=(14, 7.5), dpi=100)
     plt.rcParams.update({"font.size": 18})
+
+
 
     # data values
     for i in range(1, len(args.imcsv)):

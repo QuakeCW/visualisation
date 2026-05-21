@@ -1,4 +1,4 @@
-#!/home01/x3336a02/.local/quakecw_venv/bin/python3
+#!/usr/bin/env python
 """
 Compare spectral acceleration with vibration period.
 """
@@ -77,7 +77,7 @@ if __name__ == "__main__":
     psa_vals = np_lstrip(psa_names, chars="pSA_").astype(np.float32)
     # sorted
     sort_idx = np.argsort(psa_vals)
-    psa_names = psa_names[sort_idx]
+    psa_names = [psa_names[i] for i in sort_idx]
     psa_vals = psa_vals[sort_idx]
     # value range
     y_max = max([ims[i][psa_names].max().max() for i in range(len(ims))])
